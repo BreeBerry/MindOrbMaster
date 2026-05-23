@@ -1,0 +1,6 @@
+{
+  "name": "Orb Master",
+  "description": "An RPG-fused Mastermind board game with epic boss battles, unique upgradeable orb abilities, and a progression system powered by orb fragments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
