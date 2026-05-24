@@ -68,34 +68,9 @@ export default function App() {
   const [selectedSpellId, setSelectedSpellId] = useState<string>('orange');
 
   const renderOrbIconInBattle = (orbId: string) => {
-    if (orbId === 'gold') {
-      return (
-        <span 
-          className="relative inline-flex items-center justify-center w-8 h-4 rounded-sm bg-gradient-to-r from-amber-600 via-amber-400 to-yellow-350 border border-yellow-300 shadow-sm select-none shrink-0"
-          style={{
-            boxShadow: 'inset 0.5px 0.5px 0px rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.4)',
-          }}
-          title="Gold Bar"
-        >
-          <span className="text-[6.5px] font-black tracking-wider text-amber-950 font-mono leading-none">999</span>
-        </span>
-      );
-    }
-    if (orbId === 'silver') {
-      return (
-        <span 
-          className="relative inline-flex items-center justify-center w-8 h-4 rounded-sm bg-gradient-to-r from-slate-400 via-zinc-350 to-zinc-200 border border-zinc-100 shadow-sm select-none shrink-0"
-          style={{
-            boxShadow: 'inset 0.5px 0.5px 0px rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.4)',
-          }}
-          title="Silver Bar"
-        >
-          <span className="text-[6.5px] font-black tracking-wider text-slate-800 font-mono leading-none">AG</span>
-        </span>
-      );
-    }
+    const isBar = orbId === 'gold' || orbId === 'silver';
     return (
-      <MindOrb orbId={orbId} className="w-3.5 h-3.5" />
+      <MindOrb orbId={orbId} className={isBar ? "w-8 h-4" : "w-5 h-5"} />
     );
   };
 
@@ -857,7 +832,22 @@ export default function App() {
     }
 
     return (
-      <div className="text-white font-sans selection:bg-amber-500 selection:text-black">
+      <div className="text-white font-sans selection:bg-amber-500 selection:text-black relative min-h-full">
+        {/* Ambient background for active campaign/gameplay screen */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          <img 
+            src="https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/title_screen/OrbMaster%20blank%20zany.png" 
+            alt="Campaign Background"
+            className="w-full h-full object-cover opacity-15 md:opacity-20 object-center"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "/images/title_screen/OrbMaster blank zany.png";
+            }}
+          />
+          {/* Subtle dark visual overlays to keep other components highly legible */}
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-zinc-950/70" />
+        </div>
         
         {/* Top Banner Status HUD */}
         <header className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-900 shadow">
@@ -905,7 +895,7 @@ export default function App() {
         </header>
 
         {/* Main Grid Frame */}
-        <main className="max-w-7xl mx-auto px-4 mt-4 pb-12">
+        <main className="relative z-10 max-w-7xl mx-auto px-4 mt-4 pb-12">
           
           {/* Playful Comic Tabs Navigation */}
           <div className="flex border-b border-zinc-900 gap-1 mb-4 overflow-x-auto min-w-full pb-0.5">

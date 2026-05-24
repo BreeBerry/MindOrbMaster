@@ -25,6 +25,7 @@ import {
   X
 } from 'lucide-react';
 import { BOSS_CAMPAIGN, INITIAL_ORBS } from '../data';
+import MindOrb from './MindOrb';
 
 // Custom Avatar Options with thematic names, emojis, and styling borders
 const AVATAR_OPTIONS = [
@@ -184,33 +185,10 @@ export default function StartMenu({
   const [deviceWrapper, setDeviceWrapper] = useState<'android' | 'apple'>('android');
 
   const renderOrbIcon = (orbId: string) => {
-    if (orbId === 'gold') {
-      return (
-        <span 
-          className="relative inline-flex items-center justify-center w-8 h-4 rounded-sm bg-gradient-to-r from-amber-600 via-amber-400 to-yellow-350 border border-yellow-300 shadow-sm select-none shrink-0"
-          style={{
-            boxShadow: 'inset 0.5px 0.5px 0px rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.4)',
-          }}
-          title="Gold Bar"
-        >
-          <span className="text-[6.5px] font-black tracking-wider text-amber-950 font-mono leading-none">999</span>
-        </span>
-      );
-    }
-    if (orbId === 'silver') {
-      return (
-        <span 
-          className="relative inline-flex items-center justify-center w-8 h-4 rounded-sm bg-gradient-to-r from-slate-400 via-zinc-350 to-zinc-200 border border-zinc-100 shadow-sm select-none shrink-0"
-          style={{
-            boxShadow: 'inset 0.5px 0.5px 0px rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.4)',
-          }}
-          title="Silver Bar"
-        >
-          <span className="text-[6.5px] font-black tracking-wider text-slate-800 font-mono leading-none">AG</span>
-        </span>
-      );
-    }
-    return <span className="text-xs leading-none shrink-0">{ORB_EMOJIS[orbId] || '🔮'}</span>;
+    const isBar = orbId === 'gold' || orbId === 'silver';
+    return (
+      <MindOrb orbId={orbId} className={isBar ? "w-8 h-4 inline-block shrink-0" : "w-4 h-4 inline-block shrink-0"} />
+    );
   };
 
   // Load custom player config on mount
@@ -335,8 +313,8 @@ export default function StartMenu({
                 onError={(e) => {
                   e.currentTarget.onerror = null; // Prevent infinite loops
                   e.currentTarget.src = bgDesign === 'zany' 
-                    ? "/images/title_screen/OrbMaster blank zany.svg" 
-                    : "/images/title_screen/OrbMaster blank.svg";
+                    ? "/images/title_screen/OrbMaster blank zany.png" 
+                    : "/images/title_screen/OrbMaster blank.png";
                 }}
               />
             )}
@@ -372,7 +350,7 @@ export default function StartMenu({
                 referrerPolicy="no-referrer"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/images/title_screen/OrbMaster title.svg";
+                  e.currentTarget.src = "/images/title_screen/OrbMaster title trans.png";
                 }}
               />
 
