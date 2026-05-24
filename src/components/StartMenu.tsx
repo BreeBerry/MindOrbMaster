@@ -175,7 +175,6 @@ export default function StartMenu({
   const [showOptionsModal, setShowOptionsModal] = useState<boolean>(false);
   const [showInventoryPopup, setShowInventoryPopup] = useState<boolean>(false);
   const [bgDesign, setBgDesign] = useState<'standard' | 'zany' | 'dark'>('standard');
-  const [processedTitleUrl, setProcessedTitleUrl] = useState<string>("https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/title_screen/OrbMaster%20title.png");
 
   useEffect(() => {
     setFailedUrl(null);
@@ -242,57 +241,7 @@ export default function StartMenu({
     }
   }, []);
 
-  // On-the-fly pixel processor that strips baked-in white & grey checkerboards from the title PNG
-  useEffect(() => {
-    const originalUrl = "https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/title_screen/OrbMaster%20title.png";
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = originalUrl;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0);
-      try {
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imgData.data;
 
-        // Strip checkerboard grid pixels:
-        // Checking for neutral gray pixels (where r ≈ g ≈ b) and light-gray or pure white colors.
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          const a = data[i + 3];
-
-          if (a === 0) continue;
-
-          const absRG = Math.abs(r - g);
-          const absGB = Math.abs(g - b);
-          
-          if (absRG <= 2 && absGB <= 2) {
-            // Perfectly neutral shades
-            const isWhiteGrid = r >= 240; // white squares (#ffffff)
-            const isMediumGreyGrid = r >= 190 && r <= 215; // standard light-grey squares (#cccccc)
-            const isDarkerGreyGrid = r >= 140 && r <= 175; // alternative dark-grey squares (#999999)
-            
-            if (isWhiteGrid || isMediumGreyGrid || isDarkerGreyGrid) {
-              data[i + 3] = 0; // Make transparent
-            }
-          }
-        }
-        ctx.putImageData(imgData, 0, 0);
-        setProcessedTitleUrl(canvas.toDataURL("image/png"));
-      } catch (err) {
-        console.warn("Could not sweep checkerboard grid due to sandbox limitations/CORS, fallback to direct raw asset URL.", err);
-      }
-    };
-    img.onerror = () => {
-      console.warn("Failed to pre-cache and clean the remote title image, using fallback URL directly.");
-    };
-  }, []);
 
   const changeBgDesign = (design: 'standard' | 'zany' | 'dark') => {
     setBgDesign(design);
@@ -383,11 +332,17 @@ export default function StartMenu({
                 alt="OrbMaster Background" 
                 className="absolute inset-0 w-full h-full object-cover opacity-100 transition-opacity duration-300 z-10"
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.onerror = null; // Prevent infinite loops
+                  e.currentTarget.src = bgDesign === 'zany' 
+                    ? "/images/title_screen/OrbMaster blank zany.svg" 
+                    : "/images/title_screen/OrbMaster blank.svg";
+                }}
               />
             )}
             {/* Soft dark vignettes and gradient covers to keep interactive overlays extremely legible */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/80 z-20" />
-            <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-zinc-950 via-[#07090d]/85 to-transparent z-20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/50 z-20" />
+            <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-zinc-950 via-[#07090d]/65 to-transparent z-20" />
           </div>
 
           {/* Header Row */}
@@ -409,12 +364,16 @@ export default function StartMenu({
               transition={{ duration: 0.5, ease: 'easeOut' }}
               className="flex flex-col items-center w-full px-2"
             >
-              {/* Overlay title image with browser-side transparent checkerboard mitigation */}
+              {/* Overlay title image with beautiful true transparency */}
               <img 
-                src={processedTitleUrl} 
+                src="https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/title_screen/OrbMaster%20title%20trans.png" 
                 alt="OrbMaster Title" 
                 className="w-full max-w-[340px] md:max-w-[360px] object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.95)] pointer-events-none mb-4"
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/images/title_screen/OrbMaster title.svg";
+                }}
               />
 
               {/* Dynamic subtitle indicator sitting neatly under the title graphic */}
