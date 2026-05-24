@@ -34,7 +34,7 @@ export default function MindOrb({ orbId, className = 'w-3.5 h-3.5', style }: Min
   } else if (orbId === 'silver') {
     filename = 'silver_bar.png';
   }
-  const imageUrl = `/images/mind_orb_assets/${filename}`;
+  const imageUrl = `https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/mind_orb_assets/${filename}`;
 
   if (!imgErr) {
     return (

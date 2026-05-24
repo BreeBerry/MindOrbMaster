@@ -174,6 +174,8 @@ export default function StartMenu({
   // Local settings
   const [showOptionsModal, setShowOptionsModal] = useState<boolean>(false);
   const [showInventoryPopup, setShowInventoryPopup] = useState<boolean>(false);
+  const [bgDesign, setBgDesign] = useState<'standard' | 'zany' | 'dark'>('standard');
+  const [processedTitleUrl, setProcessedTitleUrl] = useState<string>("https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/title_screen/OrbMaster%20title.png");
 
   useEffect(() => {
     setFailedUrl(null);
@@ -219,6 +221,7 @@ export default function StartMenu({
     const savedSfx = localStorage.getItem('mm_profile_sfx_on');
     const savedQuality = localStorage.getItem('mm_profile_gfx');
     const savedDevice = localStorage.getItem('mm_device_design');
+    const savedBgDesign = localStorage.getItem('mm_bg_design');
 
     if (savedName) {
       setProfileName(savedName);
@@ -234,7 +237,67 @@ export default function StartMenu({
     if (savedDevice === 'apple' || savedDevice === 'android') {
       setDeviceWrapper(savedDevice);
     }
+    if (savedBgDesign === 'standard' || savedBgDesign === 'zany' || savedBgDesign === 'dark') {
+      setBgDesign(savedBgDesign);
+    }
   }, []);
+
+  // On-the-fly pixel processor that strips baked-in white & grey checkerboards from the title PNG
+  useEffect(() => {
+    const originalUrl = "https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/title_screen/OrbMaster%20title.png";
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = originalUrl;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
+      try {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+
+        // Strip checkerboard grid pixels:
+        // Checking for neutral gray pixels (where r ≈ g ≈ b) and light-gray or pure white colors.
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const a = data[i + 3];
+
+          if (a === 0) continue;
+
+          const absRG = Math.abs(r - g);
+          const absGB = Math.abs(g - b);
+          
+          if (absRG <= 2 && absGB <= 2) {
+            // Perfectly neutral shades
+            const isWhiteGrid = r >= 240; // white squares (#ffffff)
+            const isMediumGreyGrid = r >= 190 && r <= 215; // standard light-grey squares (#cccccc)
+            const isDarkerGreyGrid = r >= 140 && r <= 175; // alternative dark-grey squares (#999999)
+            
+            if (isWhiteGrid || isMediumGreyGrid || isDarkerGreyGrid) {
+              data[i + 3] = 0; // Make transparent
+            }
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+        setProcessedTitleUrl(canvas.toDataURL("image/png"));
+      } catch (err) {
+        console.warn("Could not sweep checkerboard grid due to sandbox limitations/CORS, fallback to direct raw asset URL.", err);
+      }
+    };
+    img.onerror = () => {
+      console.warn("Failed to pre-cache and clean the remote title image, using fallback URL directly.");
+    };
+  }, []);
+
+  const changeBgDesign = (design: 'standard' | 'zany' | 'dark') => {
+    setBgDesign(design);
+    localStorage.setItem('mm_bg_design', design);
+  };
 
   const saveProfileChange = () => {
     const trimmed = tempName.trim();
@@ -313,20 +376,18 @@ export default function StartMenu({
         /* --- BRANDED GAME LAUNCHER SPLASH (SCREEN A) --- */
         <div className="relative z-10 w-full flex-1 flex flex-col justify-between py-5 px-4 overflow-hidden bg-[#07090d] select-none">
           {/* Background backdrop image covering the start screen area */}
-          <div className="absolute inset-0 z-0 pointer-events-none">
-            <img 
-              src="/images/title_screen/OrbMaster blank.png" 
-              alt="OrbMaster Background" 
-              className="w-full h-full object-cover opacity-90"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                // In case the image doesn't load yet, keep it hidden
-                e.currentTarget.style.display = 'none';
-              }}
-            />
+          <div className="absolute inset-0 z-0 pointer-events-none bg-[#07090d]">
+            {bgDesign !== 'dark' && (
+              <img 
+                src={bgDesign === 'zany' ? "https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/title_screen/OrbMaster%20blank%20zany.png" : "https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/title_screen/OrbMaster%20blank.png"} 
+                alt="OrbMaster Background" 
+                className="absolute inset-0 w-full h-full object-cover opacity-100 transition-opacity duration-300 z-10"
+                referrerPolicy="no-referrer"
+              />
+            )}
             {/* Soft dark vignettes and gradient covers to keep interactive overlays extremely legible */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/80" />
-            <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-zinc-950 via-[#07090d]/85 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/80 z-20" />
+            <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-zinc-950 via-[#07090d]/85 to-transparent z-20" />
           </div>
 
           {/* Header Row */}
@@ -341,23 +402,19 @@ export default function StartMenu({
           </div>
 
           {/* Gothic Dungeon Artwork Section & Title Overlay */}
-          <div className="relative flex-1 flex flex-col items-center justify-center my-auto py-1 relative z-10 w-full">
+          <div className="relative flex-1 flex flex-col items-center justify-center my-auto py-1 relative z-10 w-full animate-fade-in">
             <motion.div 
               initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
               className="flex flex-col items-center w-full px-2"
             >
-              {/* Overlay title image */}
+              {/* Overlay title image with browser-side transparent checkerboard mitigation */}
               <img 
-                src="/images/title_screen/OrbMaster title.png" 
+                src={processedTitleUrl} 
                 alt="OrbMaster Title" 
                 className="w-full max-w-[340px] md:max-w-[360px] object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.95)] pointer-events-none mb-4"
                 referrerPolicy="no-referrer"
-                onError={(e) => {
-                  // Fallback title text rendering if the PNG hasn't loaded
-                  e.currentTarget.style.display = 'none';
-                }}
               />
 
               {/* Dynamic subtitle indicator sitting neatly under the title graphic */}
@@ -891,10 +948,52 @@ export default function StartMenu({
                   </div>
                   <button
                     onClick={cycleQuality}
-                    className="px-3 py-1.5 bg-zinc-950 border border-zinc-850 text-purple-400 text-[8.5px] font-black uppercase font-mono rounded-lg hover:border-purple-500/50 transition cursor-pointer"
+                    className="px-3 py-1.5 bg-zinc-950 border border-zinc-855 text-purple-400 text-[8.5px] font-black uppercase font-mono rounded-lg hover:border-purple-500/50 transition cursor-pointer"
                   >
                     {graphicQuality} QUALITY
                   </button>
+                </div>
+
+                {/* Background Design choice */}
+                <div className="p-3 rounded-2xl bg-zinc-900/50 border border-zinc-900">
+                  <div className="flex justify-between items-center mb-2">
+                    <div>
+                      <div className="text-[10px] font-black uppercase">Title Screen Backdrop</div>
+                      <p className="text-[8px] text-zinc-500 mt-0.5">Toggle background image orientations</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <button
+                      onClick={() => changeBgDesign('standard')}
+                      className={`py-1 text-[8px] font-mono font-bold rounded cursor-pointer transition ${
+                        bgDesign === 'standard'
+                          ? 'bg-amber-500 text-black font-extrabold'
+                          : 'bg-zinc-950 text-zinc-500 border border-zinc-900 hover:text-zinc-300'
+                      }`}
+                    >
+                      STANDARD
+                    </button>
+                    <button
+                      onClick={() => changeBgDesign('zany')}
+                      className={`py-1 text-[8px] font-mono font-bold rounded cursor-pointer transition ${
+                        bgDesign === 'zany'
+                          ? 'bg-cyan-550 text-white font-extrabold'
+                          : 'bg-zinc-950 text-zinc-500 border border-zinc-900 hover:text-zinc-300'
+                      }`}
+                    >
+                      ZANY
+                    </button>
+                    <button
+                      onClick={() => changeBgDesign('dark')}
+                      className={`py-1 text-[8px] font-mono font-bold rounded cursor-pointer transition ${
+                        bgDesign === 'dark'
+                          ? 'bg-purple-500 text-black font-extrabold'
+                          : 'bg-zinc-950 text-zinc-500 border border-zinc-900 hover:text-zinc-300'
+                      }`}
+                    >
+                      DARK VOID
+                    </button>
+                  </div>
                 </div>
 
                 {/* Alert for danger zone operations */}
