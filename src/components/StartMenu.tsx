@@ -311,128 +311,60 @@ export default function StartMenu({
 
       {!isGameLaunched ? (
         /* --- BRANDED GAME LAUNCHER SPLASH (SCREEN A) --- */
-        <div className="relative z-10 w-full flex-1 flex flex-col justify-between py-5 px-4 overflow-y-auto no-scrollbar bg-[#07090d]">
+        <div className="relative z-10 w-full flex-1 flex flex-col justify-between py-5 px-4 overflow-hidden bg-[#07090d] select-none">
+          {/* Background backdrop image covering the start screen area */}
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <img 
+              src="/images/title_screen/OrbMaster blank.png" 
+              alt="OrbMaster Background" 
+              className="w-full h-full object-cover opacity-90"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                // In case the image doesn't load yet, keep it hidden
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            {/* Soft dark vignettes and gradient covers to keep interactive overlays extremely legible */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/80" />
+            <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-zinc-950 via-[#07090d]/85 to-transparent" />
+          </div>
+
           {/* Header Row */}
-          <div className="w-full flex items-center justify-between select-none border-b border-zinc-850 pb-2 mb-3">
+          <div className="w-full flex items-center justify-between select-none border-b border-zinc-850/60 pb-2 mb-3 relative z-10">
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-[7.5px] font-mono font-bold tracking-widest text-cyan-500 uppercase">ASCENSION SECURE ENTRANCE</span>
+              <span className="text-[7.5px] font-mono font-bold tracking-widest text-cyan-500 uppercase">CAMPAIGN DETECTIVE TERMINAL</span>
             </div>
             <span className="text-[7.5px] font-mono font-extrabold text-[#06b6d4] bg-cyan-950/20 border border-cyan-800/35 px-2 py-0.5 rounded uppercase font-mono">
               GOLD & SILVER INITIATED
             </span>
           </div>
 
-          {/* Gothic Dungeon Artwork Section */}
-          <div className="relative flex-1 flex flex-col items-center justify-center my-auto py-1">
-            
-            {/* Absolute Stone Inscriptions Tablets (left and right edges background) */}
-            <div className="absolute inset-x-0 top-0 bottom-0 pointer-events-none select-none opacity-20 flex justify-between items-stretch text-[7px] font-bold font-serif text-slate-500 uppercase tracking-widest px-1">
-              {/* Left Wall Inscriptions */}
-              <div className="flex flex-col justify-around text-left">
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">LEMONS</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">TEMPLEFRIST</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">BIGGINSLY</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">KNOWN / UNKNOWN = ?</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">NANOMIC</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">PROGRESS DEMANDS INSIGHT</span>
-              </div>
-              
-              {/* Right Wall Inscriptions */}
-              <div className="flex flex-col justify-around text-right">
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">PRETTY PEA</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">SIR LOUIE</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">QUEEN ASABETH</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">THE PEG COLISEUM</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">MAD MARTIN</span>
-                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">ELKGORE</span>
-              </div>
-            </div>
+          {/* Gothic Dungeon Artwork Section & Title Overlay */}
+          <div className="relative flex-1 flex flex-col items-center justify-center my-auto py-1 relative z-10 w-full">
+            <motion.div 
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="flex flex-col items-center w-full px-2"
+            >
+              {/* Overlay title image */}
+              <img 
+                src="/images/title_screen/OrbMaster title.png" 
+                alt="OrbMaster Title" 
+                className="w-full max-w-[340px] md:max-w-[360px] object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.95)] pointer-events-none mb-4"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  // Fallback title text rendering if the PNG hasn't loaded
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
 
-            {/* Creeping vines in the corner */}
-            <div className="absolute -bottom-2 -left-3 text-lg opacity-40 select-none animate-pulse pointer-events-none">🌿 🍀 🌿</div>
-            <div className="absolute -bottom-2 -right-3 text-lg opacity-40 select-none animate-pulse pointer-events-none">🍀 🌿 🍀</div>
-            <div className="absolute -top-3 -right-2 text-md opacity-25 select-none pointer-events-none">🌿</div>
-            <div className="absolute -top-3 -left-2 text-md opacity-25 select-none pointer-events-none">🌿</div>
-
-            {/* Main Altar Graphic */}
-            <div className="flex flex-col items-center w-full max-w-[325px] bg-zinc-950/50 border border-zinc-900/50 rounded-3xl p-4 shadow-3xl backdrop-blur-sm relative my-2">
-              <div className="absolute inset-0 bg-radial-gradient(circle_at_center, rgba(6,182,212,0.06)_0%, transparent_70%) pointer-events-none" />
-
-              {/* 1. Large Top Spheres (Gold and Silver) */}
-              <div className="flex items-center gap-7 mb-4 relative z-10 justify-center">
-                <div className="flex flex-col items-center">
-                  <SplashOrb color="gold" size="lg" />
-                  <span className="text-[7.5px] font-mono font-bold text-amber-500 tracking-wider uppercase mt-1">AURUM</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <SplashOrb color="silver" size="lg" />
-                  <span className="text-[7.5px] font-mono font-bold text-slate-400 tracking-wider uppercase mt-1">ARGENTUM</span>
-                </div>
-              </div>
-
-              {/* 2. Overarching Altar Title Platform */}
-              <div className="flex flex-col items-center select-none text-center bg-zinc-950/60 p-3 rounded-2xl border border-zinc-850 w-full mb-4 shadow-inner">
-                <h1 className="text-3xl font-extrabold tracking-[0.2em] text-zinc-100 uppercase" style={{ fontFamily: 'Georgia, serif', textShadow: '2px 2px 0px #090a0f, -1px -1px 0px #a1a1aa, 0 8px 16px rgba(0,0,0,0.8)' }}>
-                  ORB
-                </h1>
-                <h1 className="text-2xl font-black tracking-[0.2em] text-zinc-200 uppercase leading-none mt-1" style={{ fontFamily: 'Georgia, serif', textShadow: '2px 2px 0px #090a0f, -1px -1px 0px #a1a1aa, 0 8px 16px rgba(0,0,0,0.8)' }}>
-                  MASTER
-                </h1>
-                <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-[#06b6d4]/40 to-transparent my-1.5" />
-                <p className="text-[7.5px] font-mono tracking-[0.3em] text-[#06b6d4] font-black uppercase">
-                  MIND ORB DEDUCTION
-                </p>
-              </div>
-
-              {/* 3. Intricate 3x3 Grid of Swirling/Glowing Orbs */}
-              <div className="relative flex items-center justify-center p-3.5 bg-zinc-900/60 border border-zinc-800 rounded-2xl shadow-inner w-full">
-                {/* Rotating gear indicators on left and right */}
-                <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 border border-[#06b6d4]/30 rounded-full flex items-center justify-center animate-[spin_12s_linear_infinite] opacity-50">
-                  <div className="border border-dashed border-[#06b6d4]/40 w-4 h-4 rounded-full" />
-                </div>
-                <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 border border-[#06b6d4]/30 rounded-full flex items-center justify-center animate-[spin_12s_linear_infinite] opacity-50" style={{ animationDirection: 'reverse' }}>
-                  <div className="border border-dashed border-[#06b6d4]/40 w-4 h-4 rounded-full" />
-                </div>
-
-                {/* 3x3 container of all glowing gems */}
-                <div className="grid grid-cols-3 gap-3 md:gap-3.5 relative z-10 p-0.5">
-                  <SplashOrb color="red" size="md" />
-                  <SplashOrb color="blue" size="md" />
-                  <SplashOrb color="green" size="md" />
-                  
-                  <SplashOrb color="white" size="md" />
-                  <SplashOrb color="yellow" size="md" />
-                  <SplashOrb color="orange" size="md" />
-                  
-                  <SplashOrb color="teal" size="md" />
-                  <SplashOrb color="purple" size="md" />
-                  <SplashOrb color="pink" size="md" />
-                </div>
-              </div>
-
-              {/* Flanking Shelf indicators (sitting beneath) */}
-              <div className="w-full flex justify-between items-center mt-3 gap-2 px-1">
-                {/* Left Mini Shelf */}
-                <div className="flex gap-0.5 bg-zinc-900/40 p-1 border border-zinc-800/30 rounded-lg shadow-sm">
-                  <SplashOrb color="red" size="sm" />
-                  <SplashOrb color="blue" size="sm" />
-                  <SplashOrb color="green" size="sm" />
-                  <SplashOrb color="yellow" size="sm" />
-                  <SplashOrb color="orange" size="sm" />
-                </div>
-                {/* Right Mini Shelf */}
-                <div className="flex gap-0.5 bg-zinc-900/40 p-1 border border-zinc-800/30 rounded-lg shadow-sm">
-                  <SplashOrb color="orange" size="sm" />
-                  <SplashOrb color="teal" size="sm" />
-                  <SplashOrb color="purple" size="sm" />
-                  <SplashOrb color="pink" size="sm" />
-                  <SplashOrb color="white" size="sm" />
-                </div>
-              </div>
-
-            </div>
-
+              {/* Dynamic subtitle indicator sitting neatly under the title graphic */}
+              <p className="text-[8px] md:text-[8.5px] font-mono tracking-[0.28em] text-cyan-400/80 font-black uppercase text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] select-none">
+                MIND ORB DEDUCTION
+              </p>
+            </motion.div>
           </div>
 
           {/* Action Menu Buttons Panel */}
