@@ -66,6 +66,71 @@ const getBossEmoji = (bossId: string) => {
   }
 };
 
+const SplashOrb = ({ color, size = 'md', className = '' }: { color: string; size?: 'sm' | 'md' | 'lg' | 'xl'; className?: string }) => {
+  const gradientMap: { [key: string]: string } = {
+    red: 'radial-gradient(circle at 35% 35%, #ff9e93 0%, #ef4444 38%, #991b1b 75%, #3b0707 100%)',
+    blue: 'radial-gradient(circle at 35% 35%, #a1d4ff 0%, #3b82f6 38%, #1e40af 75%, #0f172a 100%)',
+    green: 'radial-gradient(circle at 35% 35%, #a7f3d0 0%, #10b981 38%, #064e3b 75%, #022c22 100%)',
+    white: 'radial-gradient(circle at 35% 35%, #ffffff 0%, #f1f5f9 35%, #94a3b8 72%, #1e293b 100%)',
+    yellow: 'radial-gradient(circle at 35% 35%, #fef08a 0%, #eab308 38%, #854d0e 75%, #422006 100%)',
+    orange: 'radial-gradient(circle at 35% 35%, #fed7aa 0%, #f97316 38%, #9a3412 75%, #3c0f03 100%)',
+    teal: 'radial-gradient(circle at 35% 35%, #a7f3f0 0%, #06b6d4 38%, #0891b2 75%, #083344 100%)',
+    purple: 'radial-gradient(circle at 35% 35%, #f3e8ff 0%, #8b5cf6 38%, #5b21b6 75%, #2e1065 100%)',
+    pink: 'radial-gradient(circle at 35% 35%, #fce7f3 0%, #ec4899 38%, #9d174d 75%, #4c0519 100%)',
+    black: 'radial-gradient(circle at 35% 35%, #71717a 0%, #27272a 38%, #09090b 75%, #000000 100%)',
+    gold: 'radial-gradient(circle at 30% 30%, #fffbeb 0%, #fde047 30%, #eab308 60%, #854d0e 80%, #3f1a02 100%)',
+    silver: 'radial-gradient(circle at 30% 30%, #ffffff 0%, #f4f4f5 30%, #a1a1aa 60%, #52525b 80%, #18181b 100%)'
+  };
+
+  const shadowMap: { [key: string]: string } = {
+    red: 'rgba(239, 68, 68, 0.45)',
+    blue: 'rgba(59, 130, 246, 0.45)',
+    green: 'rgba(16, 185, 129, 0.45)',
+    white: 'rgba(226, 232, 240, 0.4)',
+    yellow: 'rgba(234, 179, 8, 0.45)',
+    orange: 'rgba(249, 115, 22, 0.45)',
+    teal: 'rgba(6, 182, 212, 0.45)',
+    purple: 'rgba(139, 92, 246, 0.45)',
+    pink: 'rgba(236, 72, 153, 0.45)',
+    black: 'rgba(63, 63, 70, 0.3)',
+    gold: 'rgba(234, 179, 8, 0.7)',
+    silver: 'rgba(255, 255, 255, 0.55)'
+  };
+
+  const sizeClasses = {
+    sm: 'w-5 h-5',
+    md: 'w-8 h-8 md:w-9 md:h-9',
+    lg: 'w-14 h-14 md:w-16 md:h-16',
+    xl: 'w-18 h-18 md:w-20 md:h-20'
+  };
+
+  const orbGrad = gradientMap[color] || gradientMap.red;
+  const shadowColor = shadowMap[color] || 'rgba(0,0,0,0.5)';
+
+  return (
+    <div
+      className={`rounded-full relative shrink-0 ${sizeClasses[size]} ${className}`}
+      style={{
+        background: orbGrad,
+        boxShadow: `0 0 18px ${shadowColor}, inset -2px -2px 6px rgba(0,0,0,0.6), inset 2px 2px 4px rgba(255,255,255,0.4)`
+      }}
+    >
+      <div className="absolute inset-0 rounded-full animate-pulse opacity-30 bg-gradient-to-tr from-transparent via-white/20 to-transparent pointer-events-none" />
+      <div 
+        className="rounded-full bg-white/80 absolute pointer-events-none" 
+        style={{
+          top: '12%',
+          left: '12%',
+          width: '28%',
+          height: '28%',
+          filter: 'blur(0.5px)',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 80%)'
+        }}
+      />
+    </div>
+  );
+};
+
 interface StartMenuProps {
   campaignProgress: number;
   currentBossIndex: number;
@@ -246,86 +311,176 @@ export default function StartMenu({
 
       {!isGameLaunched ? (
         /* --- BRANDED GAME LAUNCHER SPLASH (SCREEN A) --- */
-        <div className="relative z-10 w-full flex-1 flex flex-col justify-between py-6 px-4">
-          <div className="w-full flex items-center justify-between select-none">
+        <div className="relative z-10 w-full flex-1 flex flex-col justify-between py-5 px-4 overflow-y-auto no-scrollbar bg-[#07090d]">
+          {/* Header Row */}
+          <div className="w-full flex items-center justify-between select-none border-b border-zinc-850 pb-2 mb-3">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-[8.5px] font-mono font-bold tracking-widest text-zinc-500 uppercase">SERVER STATE: READY</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="text-[7.5px] font-mono font-bold tracking-widest text-cyan-500 uppercase">ASCENSION SECURE ENTRANCE</span>
             </div>
-            <span className="text-[8px] font-mono font-bold text-amber-500/80 bg-amber-500/5 border border-amber-500/15 px-2.5 py-0.5 rounded-full uppercase">
-              1.6.0 POCKET
+            <span className="text-[7.5px] font-mono font-extrabold text-[#06b6d4] bg-cyan-950/20 border border-cyan-800/35 px-2 py-0.5 rounded uppercase font-mono">
+              GOLD & SILVER INITIATED
             </span>
           </div>
 
-          {/* Centered logo container */}
-          <div className="my-auto py-12 flex flex-col items-center select-none text-center">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.35 }}
-              className="relative mb-6"
-            >
-              <div className="w-18 h-18 rounded-2xl bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-500 flex items-center justify-center shadow-[0_0_40px_rgba(245,158,11,0.22)] border border-white/10 relative">
-                <Swords className="w-8 h-8 text-black stroke-[2.2]" />
-                <div className="absolute inset-x-0 -bottom-1 h-1 bg-amber-700 rounded-b-xl" />
+          {/* Gothic Dungeon Artwork Section */}
+          <div className="relative flex-1 flex flex-col items-center justify-center my-auto py-1">
+            
+            {/* Absolute Stone Inscriptions Tablets (left and right edges background) */}
+            <div className="absolute inset-x-0 top-0 bottom-0 pointer-events-none select-none opacity-20 flex justify-between items-stretch text-[7px] font-bold font-serif text-slate-500 uppercase tracking-widest px-1">
+              {/* Left Wall Inscriptions */}
+              <div className="flex flex-col justify-around text-left">
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">LEMONS</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">TEMPLEFRIST</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">BIGGINSLY</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">KNOWN / UNKNOWN = ?</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">NANOMIC</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">PROGRESS DEMANDS INSIGHT</span>
               </div>
-            </motion.div>
+              
+              {/* Right Wall Inscriptions */}
+              <div className="flex flex-col justify-around text-right">
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">PRETTY PEA</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">SIR LOUIE</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">QUEEN ASABETH</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">THE PEG COLISEUM</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">MAD MARTIN</span>
+                <span className="bg-zinc-950/40 p-1 border border-zinc-900/40 rounded shadow-md">ELKGORE</span>
+              </div>
+            </div>
 
-            <h1 className="text-2xl font-black tracking-tighter uppercase font-mono bg-gradient-to-b from-white via-zinc-150 to-zinc-400 bg-clip-text text-transparent leading-none">
-              ORB MASTER
-            </h1>
-            <p className="text-[9.5px] font-mono tracking-[0.25em] text-amber-500 font-extrabold uppercase mt-2">
-              ALCHEMICAL CODES CRUCIBLE
-            </p>
-            <p className="text-[10.5px] text-zinc-400 mt-3 max-w-[270px] leading-relaxed font-sans">
-              Decipher sequence combos, master runic forces, and conquer the boss node wardens.
-            </p>
+            {/* Creeping vines in the corner */}
+            <div className="absolute -bottom-2 -left-3 text-lg opacity-40 select-none animate-pulse pointer-events-none">🌿 🍀 🌿</div>
+            <div className="absolute -bottom-2 -right-3 text-lg opacity-40 select-none animate-pulse pointer-events-none">🍀 🌿 🍀</div>
+            <div className="absolute -top-3 -right-2 text-md opacity-25 select-none pointer-events-none">🌿</div>
+            <div className="absolute -top-3 -left-2 text-md opacity-25 select-none pointer-events-none">🌿</div>
+
+            {/* Main Altar Graphic */}
+            <div className="flex flex-col items-center w-full max-w-[325px] bg-zinc-950/50 border border-zinc-900/50 rounded-3xl p-4 shadow-3xl backdrop-blur-sm relative my-2">
+              <div className="absolute inset-0 bg-radial-gradient(circle_at_center, rgba(6,182,212,0.06)_0%, transparent_70%) pointer-events-none" />
+
+              {/* 1. Large Top Spheres (Gold and Silver) */}
+              <div className="flex items-center gap-7 mb-4 relative z-10 justify-center">
+                <div className="flex flex-col items-center">
+                  <SplashOrb color="gold" size="lg" />
+                  <span className="text-[7.5px] font-mono font-bold text-amber-500 tracking-wider uppercase mt-1">AURUM</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <SplashOrb color="silver" size="lg" />
+                  <span className="text-[7.5px] font-mono font-bold text-slate-400 tracking-wider uppercase mt-1">ARGENTUM</span>
+                </div>
+              </div>
+
+              {/* 2. Overarching Altar Title Platform */}
+              <div className="flex flex-col items-center select-none text-center bg-zinc-950/60 p-3 rounded-2xl border border-zinc-850 w-full mb-4 shadow-inner">
+                <h1 className="text-3xl font-extrabold tracking-[0.2em] text-zinc-100 uppercase" style={{ fontFamily: 'Georgia, serif', textShadow: '2px 2px 0px #090a0f, -1px -1px 0px #a1a1aa, 0 8px 16px rgba(0,0,0,0.8)' }}>
+                  ORB
+                </h1>
+                <h1 className="text-2xl font-black tracking-[0.2em] text-zinc-200 uppercase leading-none mt-1" style={{ fontFamily: 'Georgia, serif', textShadow: '2px 2px 0px #090a0f, -1px -1px 0px #a1a1aa, 0 8px 16px rgba(0,0,0,0.8)' }}>
+                  MASTER
+                </h1>
+                <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-[#06b6d4]/40 to-transparent my-1.5" />
+                <p className="text-[7.5px] font-mono tracking-[0.3em] text-[#06b6d4] font-black uppercase">
+                  MIND ORB DEDUCTION
+                </p>
+              </div>
+
+              {/* 3. Intricate 3x3 Grid of Swirling/Glowing Orbs */}
+              <div className="relative flex items-center justify-center p-3.5 bg-zinc-900/60 border border-zinc-800 rounded-2xl shadow-inner w-full">
+                {/* Rotating gear indicators on left and right */}
+                <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 border border-[#06b6d4]/30 rounded-full flex items-center justify-center animate-[spin_12s_linear_infinite] opacity-50">
+                  <div className="border border-dashed border-[#06b6d4]/40 w-4 h-4 rounded-full" />
+                </div>
+                <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 border border-[#06b6d4]/30 rounded-full flex items-center justify-center animate-[spin_12s_linear_infinite] opacity-50" style={{ animationDirection: 'reverse' }}>
+                  <div className="border border-dashed border-[#06b6d4]/40 w-4 h-4 rounded-full" />
+                </div>
+
+                {/* 3x3 container of all glowing gems */}
+                <div className="grid grid-cols-3 gap-3 md:gap-3.5 relative z-10 p-0.5">
+                  <SplashOrb color="red" size="md" />
+                  <SplashOrb color="blue" size="md" />
+                  <SplashOrb color="green" size="md" />
+                  
+                  <SplashOrb color="white" size="md" />
+                  <SplashOrb color="yellow" size="md" />
+                  <SplashOrb color="orange" size="md" />
+                  
+                  <SplashOrb color="teal" size="md" />
+                  <SplashOrb color="purple" size="md" />
+                  <SplashOrb color="pink" size="md" />
+                </div>
+              </div>
+
+              {/* Flanking Shelf indicators (sitting beneath) */}
+              <div className="w-full flex justify-between items-center mt-3 gap-2 px-1">
+                {/* Left Mini Shelf */}
+                <div className="flex gap-0.5 bg-zinc-900/40 p-1 border border-zinc-800/30 rounded-lg shadow-sm">
+                  <SplashOrb color="red" size="sm" />
+                  <SplashOrb color="blue" size="sm" />
+                  <SplashOrb color="green" size="sm" />
+                  <SplashOrb color="yellow" size="sm" />
+                  <SplashOrb color="orange" size="sm" />
+                </div>
+                {/* Right Mini Shelf */}
+                <div className="flex gap-0.5 bg-zinc-900/40 p-1 border border-zinc-800/30 rounded-lg shadow-sm">
+                  <SplashOrb color="orange" size="sm" />
+                  <SplashOrb color="teal" size="sm" />
+                  <SplashOrb color="purple" size="sm" />
+                  <SplashOrb color="pink" size="sm" />
+                  <SplashOrb color="white" size="sm" />
+                </div>
+              </div>
+
+            </div>
+
           </div>
 
-          {/* Giant play buttons */}
-          <div className="w-full space-y-2.5">
-            <button
+          {/* Action Menu Buttons Panel */}
+          <div className="w-full space-y-3 mt-2 px-1.5 select-none relative z-20">
+            {/* Glowing cyan bezel 'START/CONTINUE CAMPAIGN' button (Press Start analogue in image) */}
+            <motion.button
+              whileHover={{ scale: 1.02, boxShadow: '0 0 25px rgba(6, 182, 212, 0.75)' }}
+              whileTap={{ scale: 0.98 }}
               onClick={onLaunchGame}
-              className="group w-full py-3.5 px-5 rounded-xl border-b-4 border-amber-600 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 active:translate-y-0.5 active:border-b-2 text-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 shadow-[0_8px_16px_-4px_rgba(234,179,8,0.22)] transition duration-150 cursor-pointer focus:outline-none"
+              className="w-full py-4 px-6 rounded-xl border-2 border-[#06b6d4] bg-gradient-to-b from-[#0e2c34] to-[#041114] hover:brightness-125 hover:from-[#0f343e] cursor-pointer focus:outline-none transition-all duration-200 select-none flex flex-col items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(6,182,212,0.45)]"
+              style={{
+                outline: 'none',
+              }}
             >
-              <Swords className="w-4 h-4 fill-current shrink-0" />
-              <span>
-                {campaignProgress > 0 ? 'CONTINUE CAMPAIGN' : 'START CAMPAIGN'}
-              </span>
-            </button>
-
-            <button
-              onClick={onOpenStore}
-              className="group w-full py-3 px-4 rounded-xl bg-gradient-to-r from-zinc-950 to-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/40 text-xs font-black uppercase tracking-wider text-zinc-350 hover:text-white transition flex items-center justify-between cursor-pointer focus:outline-none"
-            >
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>ORB FORGE</span>
+              <div className="text-center font-extrabold uppercase font-mono tracking-[0.2em] text-[#06b6d4] text-[13px] hover:text-[#22d3ee] drop-shadow-[0_0_8px_rgba(6,182,212,0.7)]">
+                START/CONTINUE CAMPAIGN
               </div>
-              <ChevronRight className="w-3.5 h-3.5 text-zinc-650 group-hover:text-amber-500 transition-colors" />
-            </button>
-
-            <button
-              onClick={onOpenRulebook}
-              className="group w-full py-3 px-4 rounded-xl bg-gradient-to-r from-zinc-950 to-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/40 text-xs font-black uppercase tracking-wider text-zinc-350 hover:text-white transition flex items-center justify-between cursor-pointer focus:outline-none"
-            >
-              <div className="flex items-center gap-2.5">
-                <BookOpen className="w-4 h-4 text-violet-400 shrink-0" />
-                <span>ORBMASTER CODEX</span>
+              <div className="text-[7.5px] text-[#06b6d4]/60 uppercase tracking-[0.1em] font-sans font-medium">
+                {campaignProgress > 0 ? 'CONTINUE YOUR CURRENT CAMPAIGN DECRYPTIONS' : 'START THE RUNIC CODE DECRYPTION CAMPAIGN'}
               </div>
-              <ChevronRight className="w-3.5 h-3.5 text-zinc-650 group-hover:text-amber-500 transition-colors" />
-            </button>
+            </motion.button>
 
-            <button
-              onClick={() => setShowOptionsModal(true)}
-              className="group w-full py-3 px-4 rounded-xl bg-gradient-to-r from-zinc-950 to-[#121214] border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/40 text-[11px] font-black uppercase tracking-wider text-zinc-400 hover:text-white transition flex items-center justify-between cursor-pointer focus:outline-none"
-            >
-              <div className="flex items-center gap-2.5">
-                <Settings2 className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span>SYSTEM SETTINGS</span>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5 text-zinc-650 group-hover:text-amber-500 transition-colors" />
-            </button>
+            {/* Menu options below - Orb Forge, Rulebook Codex, and Settings */}
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={onOpenStore}
+                className="group flex flex-col items-center justify-center p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-900 hover:border-amber-500/35 hover:bg-zinc-900/60 hover:text-white text-zinc-400 transition cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-amber-500/80 group-hover:text-amber-400 group-hover:scale-110 transition shrink-0" />
+                <span className="text-[8px] font-black uppercase font-mono tracking-wider mt-1.5">Mind Orb Forge</span>
+              </button>
+
+              <button
+                onClick={onOpenRulebook}
+                className="group flex flex-col items-center justify-center p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-900 hover:border-violet-500/35 hover:bg-zinc-900/60 hover:text-white text-zinc-400 transition cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4 text-violet-400/80 group-hover:text-violet-450 group-hover:scale-110 transition shrink-0" />
+                <span className="text-[8px] font-black uppercase font-mono tracking-wider mt-1.5">OrbMaster Codex</span>
+              </button>
+
+              <button
+                onClick={() => setShowOptionsModal(true)}
+                className="group flex flex-col items-center justify-center p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-900 hover:border-cyan-500/35 hover:bg-zinc-900/60 hover:text-white text-zinc-400 transition cursor-pointer"
+              >
+                <Settings2 className="w-4 h-4 text-cyan-400/80 group-hover:text-cyan-400 group-hover:scale-110 transition shrink-0" />
+                <span className="text-[8px] font-black uppercase font-mono tracking-wider mt-1.5">System Settings</span>
+              </button>
+            </div>
           </div>
         </div>
       ) : (

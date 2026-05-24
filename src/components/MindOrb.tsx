@@ -28,7 +28,13 @@ export default function MindOrb({ orbId, className = 'w-3.5 h-3.5', style }: Min
     );
   }
 
-  const imageUrl = `/Images/mind_orb_assets/${orbId}_orb.png`;
+  let filename = `${orbId}_orb.png`;
+  if (orbId === 'gold') {
+    filename = 'gold_bar.png';
+  } else if (orbId === 'silver') {
+    filename = 'silver_bar.png';
+  }
+  const imageUrl = `/images/mind_orb_assets/${filename}`;
 
   if (!imgErr) {
     return (
