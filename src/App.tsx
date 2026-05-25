@@ -1090,9 +1090,21 @@ export default function App() {
 
                       {/* Code Matrix Slot Board */}
                       <div className="bg-zinc-950 rounded-2xl border border-zinc-900 p-4 shadow-xl relative overflow-hidden">
-                        <div className="absolute right-0 top-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
+                        {/* Stone Wall Background Textured Overlay sourced from Raw GitHub URL */}
+                        <img 
+                          src="https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/stone%20wall.png"
+                          alt="Stone Wall Background Texture"
+                          className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            // Fallback to beautiful high-res Unsplash dark stone wall if file is empty/not pushed yet
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&q=80&w=800";
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/50 to-zinc-950/90 pointer-events-none" />
+                        <div className="absolute right-0 top-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none relative z-10" />
                         
-                        <div className="flex justify-between items-center mb-3 pb-1.5 border-b border-zinc-900">
+                        <div className="flex justify-between items-center mb-3 pb-1.5 border-b border-zinc-900 relative z-10">
                           <div>
                             <span className="text-[8px] uppercase tracking-wider text-amber-500 font-bold font-mono">CODE MATRIX</span>
                             <h4 className="text-[10px] uppercase font-extrabold text-zinc-350 mt-0.5">TAP TO RESET ELEMENT</h4>
@@ -1103,7 +1115,7 @@ export default function App() {
                         </div>
 
                         {/* Slots */}
-                        <div className="flex flex-wrap items-center justify-center gap-2 py-3">
+                        <div className="flex flex-wrap items-center justify-center gap-2 py-3 relative z-10">
                           {battle.currentGuess.map((slot, sIdx) => {
                             const matchingOrb = slot ? INITIAL_ORBS.find(o => o.id === slot) : null;
                             
@@ -1120,7 +1132,7 @@ export default function App() {
                                 {matchingOrb ? (
                                   <MindOrb orbId={matchingOrb.id} className="w-8.5 h-8.5" />
                                 ) : (
-                                  <span className="text-zinc-600 text-[10px] font-mono font-bold">0{sIdx + 1}</span>
+                                  <span className="text-zinc-650 text-[10px] font-mono font-bold">0{sIdx + 1}</span>
                                 )}
                               </button>
                             );
@@ -1129,7 +1141,7 @@ export default function App() {
 
                         {/* Palette elements */}
                         {battle.status === 'ACTIVE' ? (
-                          <div className="space-y-3 pt-2">
+                          <div className="space-y-3 pt-2 relative z-10">
                             <div className="text-center">
                               <span className="text-[8.5px] text-zinc-500 uppercase tracking-widest font-mono">Tap color to fill slots:</span>
                             </div>
@@ -1144,7 +1156,7 @@ export default function App() {
                                     <button
                                       key={colorId}
                                       onClick={() => handlePaletteClick(colorId)}
-                                      className="py-2 bg-zinc-950 border border-zinc-900 hover:border-zinc-850 text-[10px] font-bold rounded-lg flex flex-col items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer text-zinc-300"
+                                      className="py-2 bg-zinc-950 border border-zinc-900 hover:border-zinc-850 text-[10px] font-bold rounded-lg flex flex-col items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer text-zinc-350 shadow"
                                     >
                                       <MindOrb orbId={orb.id} className="w-4 h-4" />
                                       <span className="capitalize text-[8.5px] font-mono">{colorId}</span>
@@ -1176,7 +1188,7 @@ export default function App() {
                             </div>
                           </div>
                         ) : (
-                          <div className="text-center py-4 bg-black/40 border border-zinc-900 rounded-xl">
+                          <div className="text-center py-4 bg-black/40 border border-zinc-900 rounded-xl relative z-10">
                             <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-350">
                               Duel finished
                             </h4>
@@ -1260,10 +1272,22 @@ export default function App() {
 
                       {/* Code Matrix grid container - centering the code puzzle layout */}
                       <div className="bg-zinc-950 rounded-2xl border border-zinc-900 p-5 shadow-xl relative overflow-hidden">
-                        <div className="absolute right-0 top-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+                        {/* Stone Wall Background Textured Overlay sourced from Raw GitHub URL */}
+                        <img 
+                          src="https://raw.githubusercontent.com/BreeBerry/MindOrbMaster/main/public/images/stone%20wall.png"
+                          alt="Stone Wall Background Texture"
+                          className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            // Fallback to beautiful high-res Unsplash dark stone wall if file is empty/not pushed yet
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&q=80&w=800";
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/50 to-zinc-950/90 pointer-events-none" />
+                        <div className="absolute right-0 top-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none relative z-10" />
                         
                         {/* Title bar */}
-                        <div className="flex justify-between items-center mb-4 pb-2 border-b border-zinc-900">
+                        <div className="flex justify-between items-center mb-4 pb-2 border-b border-zinc-900 relative z-10">
                           <div>
                             <span className="text-[9px] uppercase tracking-widest text-amber-500 font-bold font-mono">CODE MATRIX DECRYPTOR</span>
                             <h4 className="text-xs uppercase font-extrabold text-zinc-350 mt-0.5">Submit Formula Combination</h4>
@@ -1274,7 +1298,7 @@ export default function App() {
                         </div>
 
                         {/* Slots */}
-                        <div className="flex flex-wrap items-center justify-center gap-3 py-6">
+                        <div className="flex flex-wrap items-center justify-center gap-3 py-6 relative z-10">
                           {battle.currentGuess.map((slot, sIdx) => {
                             const matchingOrb = slot ? INITIAL_ORBS.find(o => o.id === slot) : null;
                             
@@ -1300,7 +1324,7 @@ export default function App() {
 
                         {/* Palette Selections */}
                         {battle.status === 'ACTIVE' ? (
-                          <div className="space-y-4 pt-1 max-w-2xl mx-auto">
+                          <div className="space-y-4 pt-1 max-w-2xl mx-auto relative z-10">
                             <div className="text-center">
                               <span className="text-[9px] text-zinc-550 uppercase tracking-widest font-mono">Select elements to load into circles:</span>
                             </div>
@@ -1362,7 +1386,7 @@ export default function App() {
                             </div>
                           </div>
                         ) : (
-                          <div className="text-center py-5 bg-black/40 border border-zinc-900 rounded-xl">
+                          <div className="text-center py-5 bg-black/40 border border-zinc-900 rounded-xl relative z-10">
                             <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-350">
                               Duel complete
                             </h4>
