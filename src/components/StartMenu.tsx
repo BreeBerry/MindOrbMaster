@@ -24,7 +24,7 @@ import {
   Dice1,
   X
 } from 'lucide-react';
-import { BOSS_CAMPAIGN, INITIAL_ORBS } from '../data';
+import { BOSS_CAMPAIGN, INITIAL_ORBS, getUnlockedOrbs } from '../data';
 import MindOrb from './MindOrb';
 
 // Custom Avatar Options with thematic names, emojis, and styling borders
@@ -610,21 +610,23 @@ export default function StartMenu({
           {/* Orb Color Materials Unlocked inside this duel */}
           <div className="mb-5 space-y-2 select-none">
             <span className="text-[8px] font-mono tracking-widest text-zinc-500 font-bold block uppercase">
-              TRANSMUTATION COLOR POOL ({activeBossNode.allowedColors.length} Colors):
+              TRANSMUTATION COLOR POOL ({activeBossNode.allowedColors.filter(colorId => getUnlockedOrbs(campaignProgress).includes(colorId)).length} Colors):
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {activeBossNode.allowedColors.map((orbId) => {
-                const orbObj = INITIAL_ORBS.find(o => o.id === orbId);
-                return (
-                  <div 
-                    key={orbId} 
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/60 border border-zinc-850 rounded-xl text-[9.5px] font-bold capitalize shadow-sm transition hover:bg-zinc-900"
-                  >
-                    {renderOrbIcon(orbId)}
-                    <span className="text-zinc-350 font-bold">{orbId}</span>
-                  </div>
-                );
-              })}
+              {activeBossNode.allowedColors
+                .filter(colorId => getUnlockedOrbs(campaignProgress).includes(colorId))
+                .map((orbId) => {
+                  const orbObj = INITIAL_ORBS.find(o => o.id === orbId);
+                  return (
+                    <div 
+                      key={orbId} 
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/60 border border-zinc-850 rounded-xl text-[9.5px] font-bold capitalize shadow-sm transition hover:bg-zinc-900"
+                    >
+                      {renderOrbIcon(orbId)}
+                      <span className="text-zinc-350 font-bold">{orbId}</span>
+                    </div>
+                  );
+                })}
             </div>
           </div>
 
@@ -632,23 +634,36 @@ export default function StartMenu({
           <div className="w-full space-y-2.5">
             <button
               onClick={() => onStartCampaign(activeBossIndex)}
-              className="group w-full relative py-3.5 px-6 rounded-2xl border-b-4 border-amber-600 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-black font-black uppercase text-xs tracking-wider flex items-center justify-between shadow-[0_12px_30px_-8px_rgba(234,179,8,0.4)] active:translate-y-0.5 active:border-b-2 hover:brightness-110 active:brightness-100 transition duration-150 overflow-hidden cursor-pointer focus:outline-none"
+              className="group w-full relative py-4 px-6 rounded-2xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-purple-500/30 hover:border-purple-400 text-white font-black uppercase text-xs tracking-wider flex items-center justify-between shadow-[0_0_20px_rgba(168,85,247,0.1)] hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] active:scale-[0.98] transition-all duration-300 overflow-hidden cursor-pointer focus:outline-none"
             >
-              {/* Glowing animated beam overlay */}
-              <div className="absolute top-0 -inset-full w-1/2 h-full bg-white/25 skew-x-12 animate-[pulse_2.5s_infinite] pointer-events-none" />
-              
-              <div className="flex items-center gap-2.5 text-left text-zinc-950">
-                <Play className="w-5 h-5 fill-zinc-950 text-zinc-950 animate-pulse" />
+              {/* Pulsing neural energy grid overlay inside the button */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.12)_0%,transparent_70%)] opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              {/* Shimmer flare line */}
+              <div className="absolute top-0 -inset-full w-1/2 h-full bg-purple-500/10 skew-x-12 animate-[pulse_3s_infinite] pointer-events-none" />
+
+              <div className="flex items-center gap-3.5 text-left relative z-10">
+                <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center group-hover:bg-purple-900/80 group-hover:border-purple-400 transition-colors">
+                  <Play className="w-5 h-5 fill-purple-400 text-purple-400 group-hover:scale-110 transition-transform" />
+                </div>
                 <div>
-                  <div className="text-xs font-black tracking-tight leading-none">
-                    {campaignProgress > 0 ? 'ENGAGE SYSTEM CONSOLE' : 'INITIALIZE CODE BREAKER'}
+                  <div className="text-xs font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-white to-purple-300 uppercase flex items-center gap-1.5 font-sans">
+                    START MINDBREAKER
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping inline-block" />
                   </div>
-                  <div className="text-[8px] font-mono font-bold tracking-wide mt-1 uppercase">
-                    Stage 0{activeBossIndex + 1} Matrix Encryption Link
+                  <div className="text-[8px] font-mono font-bold tracking-widest mt-1 text-zinc-400 uppercase flex items-center gap-1">
+                    <span>STATUS: ONLINE</span>
+                    <span className="text-zinc-700">|</span>
+                    <span>STAGE 0{activeBossIndex + 1} ENCRYPTION LINK</span>
                   </div>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-zinc-950 animate-bounce cursor-pointer group-hover:translate-x-1 transition-transform stroke-[2.5]" />
+
+              <div className="flex items-center gap-1.5 relative z-10">
+                <span className="text-[9px] font-mono text-purple-400 font-bold tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  DECRYPT
+                </span>
+                <ChevronRight className="w-5 h-5 text-purple-400 animate-bounce cursor-pointer group-hover:translate-x-1 transition-transform stroke-[2.5]" />
+              </div>
             </button>
           </div>
 

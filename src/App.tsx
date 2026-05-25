@@ -27,7 +27,7 @@ import {
   Info
 } from 'lucide-react';
 
-import { INITIAL_ORBS, BOSS_CAMPAIGN } from './data';
+import { INITIAL_ORBS, BOSS_CAMPAIGN, getUnlockedOrbs } from './data';
 import { PlayerSaveData, BattleState, GuessRow, OrbInfo, RewardBreakdown } from './types';
 import BossCard from './components/BossCard';
 import OrbUpgrades from './components/OrbUpgrades';
@@ -59,6 +59,9 @@ export default function App() {
   const [currentBossIndex, setCurrentBossIndex] = useState<number>(0);
   const [unlockedBosses, setUnlockedBosses] = useState<string[]>(['boss_1', 'boss_2', 'boss_3', 'boss_4', 'boss_5']);
 
+  const [maxUnlockedOrbLength, setMaxUnlockedOrbLength] = useState<number>(4);
+  const [chosenOrbSetSize, setChosenOrbSetSize] = useState<number>(4);
+
   const [totalWins, setTotalWins] = useState<number>(0);
   const [totalLosses, setTotalLosses] = useState<number>(0);
   const [totalGuesses, setTotalGuesses] = useState<number>(0);
@@ -66,6 +69,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'battle' | 'forge' | 'codex' | 'stats'>('battle');
   const [battle, setBattle] = useState<BattleState | null>(null);
   const [selectedSpellId, setSelectedSpellId] = useState<string>('orange');
+  const [isStashModalOpen, setIsStashModalOpen] = useState<boolean>(false);
 
   const renderOrbIconInBattle = (orbId: string) => {
     const isBar = orbId === 'gold' || orbId === 'silver';
@@ -113,6 +117,8 @@ export default function App() {
       const statsWins = localStorage.getItem('mm_pouch_wins');
       const statsLosses = localStorage.getItem('mm_pouch_losses');
       const statsGuesses = localStorage.getItem('mm_pouch_guesses');
+      const savedMaxOrbLength = localStorage.getItem('mm_max_unlocked_orb_length');
+      const savedChosenOrbSize = localStorage.getItem('mm_chosen_orb_set_size');
 
       if (savedFragments) setPlayerFragments(JSON.parse(savedFragments));
       if (savedCharges) setAbilitiesCharges(JSON.parse(savedCharges));
@@ -122,6 +128,9 @@ export default function App() {
       if (statsWins) setTotalWins(parseInt(statsWins));
       if (statsLosses) setTotalLosses(parseInt(statsLosses));
       if (statsGuesses) setTotalGuesses(parseInt(statsGuesses));
+
+      if (savedMaxOrbLength) setMaxUnlockedOrbLength(parseInt(savedMaxOrbLength));
+      if (savedChosenOrbSize) setChosenOrbSetSize(parseInt(savedChosenOrbSize));
 
       const savedDevice = localStorage.getItem('mm_device_design');
       if (savedDevice === 'apple' || savedDevice === 'android') {
@@ -146,7 +155,10 @@ export default function App() {
     localStorage.setItem('mm_pouch_wins', totalWins.toString());
     localStorage.setItem('mm_pouch_losses', totalLosses.toString());
     localStorage.setItem('mm_pouch_guesses', totalGuesses.toString());
-  }, [playerFragments, abilitiesCharges, campaignProgress, unlockedBosses, totalWins, totalLosses, totalGuesses, isLoaded]);
+
+    localStorage.setItem('mm_max_unlocked_orb_length', maxUnlockedOrbLength.toString());
+    localStorage.setItem('mm_chosen_orb_set_size', chosenOrbSetSize.toString());
+  }, [playerFragments, abilitiesCharges, campaignProgress, unlockedBosses, totalWins, totalLosses, totalGuesses, maxUnlockedOrbLength, chosenOrbSetSize, isLoaded]);
 
   const triggerAlert = (message: string, type: 'success' | 'damage' | 'heal' | 'system') => {
     setActiveAlert({ message, type });
@@ -198,16 +210,17 @@ export default function App() {
       return;
     }
 
-    const availableColors = boss.allowedColors;
+    const codeLength = chosenOrbSetSize;
+    const availableColors = boss.allowedColors.filter(colorId => getUnlockedOrbs(campaignProgress).includes(colorId));
     const secret: string[] = [];
-    for (let i = 0; i < boss.orbsMax; i++) {
+    for (let i = 0; i < codeLength; i++) {
       const randIdx = Math.floor(Math.random() * availableColors.length);
       secret.push(availableColors[randIdx]);
     }
 
     const logs: string[] = [];
     logs.push(`⚔️ MATCH BEGUN: Duel vs ${boss.name} (${boss.title})`);
-    logs.push(`🔍 Level requires a ${boss.orbsMax}-color sequence.`);
+    logs.push(`🔍 Level requires a ${codeLength}-color sequence.`);
     logs.push(`🔮 Allowed colors: ${availableColors.join(', ').toUpperCase()}`);
 
     if (boss.id === 'boss_8') {
@@ -222,7 +235,7 @@ export default function App() {
       currentBoss: boss,
       secretCode: secret,
       guesses: [],
-      currentGuess: Array(boss.orbsMax).fill(null),
+      currentGuess: Array(codeLength).fill(null),
       status: 'ACTIVE',
       turnsRemaining: 10,
       maxTurns: 10,
@@ -259,6 +272,35 @@ export default function App() {
     }));
 
     triggerAlert(`Successfully forged +1 ${orbId.toUpperCase()} Spell Charge!`, 'success');
+  };
+
+  const buyOrbSetUpgrade = (nextSize: number, cost: { [orbId: string]: number }) => {
+    // Check campaign unlock eligibility first
+    if (nextSize === 5 && campaignProgress < 5) {
+      triggerAlert('Requires defeating Boss 5 (Natty D) first!', 'system');
+      return;
+    }
+    if (nextSize === 6 && campaignProgress < 7) {
+      triggerAlert('Requires defeating Boss 7 (Sir Louie) first!', 'system');
+      return;
+    }
+
+    // Check afford
+    const updatedPouch = { ...playerFragments };
+    for (const [orbId, amt] of Object.entries(cost)) {
+      const owned = updatedPouch[orbId] || 0;
+      if (owned < amt) {
+        triggerAlert(`Insufficient ${orbId.toUpperCase()} fragments to complete the upgrade!`, 'system');
+        return;
+      }
+      updatedPouch[orbId] = owned - amt;
+    }
+
+    // Deduct fragments, change level
+    setPlayerFragments(updatedPouch);
+    setMaxUnlockedOrbLength(nextSize);
+    setChosenOrbSetSize(nextSize); // automatically select the newly unlocked size!
+    triggerAlert(`SUCCESS! Grand Altar upgraded to standard ${nextSize}-Orb guessing capacity!`, 'success');
   };
 
   const deploySpellAbility = (orbId: string) => {
@@ -339,9 +381,9 @@ export default function App() {
       case 'green':
         {
           updatedBattle.revealEffectsCount += 1;
-          const impossibleColors = battle.currentBoss.allowedColors.filter(
-            c => !battle.secretCode.includes(c) && !battle.greenRevealedAbsent.includes(c)
-          );
+          const impossibleColors = battle.currentBoss.allowedColors
+            .filter(colorId => getUnlockedOrbs(campaignProgress).includes(colorId))
+            .filter(c => !battle.secretCode.includes(c) && !battle.greenRevealedAbsent.includes(c));
           if (impossibleColors.length > 0) {
             const chosen = impossibleColors[Math.floor(Math.random() * impossibleColors.length)];
             updatedBattle.greenRevealedAbsent = [...battle.greenRevealedAbsent, chosen];
@@ -361,9 +403,10 @@ export default function App() {
           return;
         } else {
           const reScrambled: string[] = [];
-          for (let i = 0; i < battle.currentBoss.orbsMax; i++) {
-            const randIdx = Math.floor(Math.random() * battle.currentBoss.allowedColors.length);
-            reScrambled.push(battle.currentBoss.allowedColors[randIdx]);
+          const unlockedAllowed = battle.currentBoss.allowedColors.filter(colorId => getUnlockedOrbs(campaignProgress).includes(colorId));
+          for (let i = 0; i < battle.secretCode.length; i++) {
+            const randIdx = Math.floor(Math.random() * unlockedAllowed.length);
+            reScrambled.push(unlockedAllowed[randIdx]);
           }
           updatedBattle.secretCode = reScrambled;
           logs.push(`🟦 Deployed Blue Submerge: secret combination re-scrambled!`);
@@ -375,7 +418,7 @@ export default function App() {
         {
           updatedBattle.revealEffectsCount += 1;
           const unrevealedIndexes: number[] = [];
-          for (let i = 0; i < battle.currentBoss.orbsMax; i++) {
+          for (let i = 0; i < battle.secretCode.length; i++) {
             if (!battle.hintedIndexes.includes(i)) {
               unrevealedIndexes.push(i);
             }
@@ -508,9 +551,10 @@ export default function App() {
 
     if (currentBoss.id === 'boss_9' && turnsTaken === 2 && !battle.yellowNegatedActive) {
       const reScrambled: string[] = [];
+      const unlockedAllowed = currentBoss.allowedColors.filter(colorId => getUnlockedOrbs(campaignProgress).includes(colorId));
       for (let i = 0; i < size; i++) {
-        const randIdx = Math.floor(Math.random() * currentBoss.allowedColors.length);
-        reScrambled.push(currentBoss.allowedColors[randIdx]);
+        const randIdx = Math.floor(Math.random() * unlockedAllowed.length);
+        reScrambled.push(unlockedAllowed[randIdx]);
       }
       battle.secretCode = reScrambled;
       logs.push(`❄️ ELKGORE BLIZZARD: Blizzard scrambles secret matrix combination mid-battle!`);
@@ -732,6 +776,8 @@ export default function App() {
       setCampaignProgress(0);
       setCurrentBossIndex(0);
       setUnlockedBosses(['boss_1', 'boss_2', 'boss_3', 'boss_4', 'boss_5']);
+      setMaxUnlockedOrbLength(4);
+      setChosenOrbSetSize(4);
       setTotalWins(0);
       setTotalLosses(0);
       setTotalGuesses(0);
@@ -762,7 +808,7 @@ export default function App() {
     if (!battle || battle.status !== 'ACTIVE') return;
     const size = battle.currentGuess.length;
     const upd = [...battle.currentGuess];
-    const pool = battle.currentBoss.allowedColors;
+    const pool = battle.currentBoss.allowedColors.filter(colorId => getUnlockedOrbs(campaignProgress).includes(colorId));
 
     for (let i = 0; i < size; i++) {
       if (upd[i] === null) {
@@ -971,35 +1017,53 @@ export default function App() {
                     <p className="text-zinc-500 text-[10px] mt-1 max-w-xs">
                       Select unlocked stage nodes above to pay tolls or engage the passcode decryption matrix.
                     </p>
+                    {/* Match Orb Set Adjuster */}
+                    <div className="mt-4 mb-1 flex flex-col items-center gap-1.5 bg-zinc-900/10 border border-zinc-900 rounded-xl p-3 w-full max-w-xs select-none">
+                      <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-400">Match Passcode Size</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        {[4, 5, 6].map((size) => {
+                          const isUnlocked = size <= maxUnlockedOrbLength;
+                          const isSelected = chosenOrbSetSize === size;
+                          return (
+                            <button
+                              key={size}
+                              disabled={!isUnlocked}
+                              onClick={() => isUnlocked && setChosenOrbSetSize(size)}
+                              className={`w-12 h-9 rounded-lg font-mono font-extrabold text-xs flex items-center justify-center transition border ${
+                                isSelected
+                                  ? 'bg-amber-500 text-black border-amber-400 shadow shadow-amber-500/20 cursor-pointer'
+                                  : isUnlocked
+                                  ? 'bg-zinc-900 text-zinc-300 border-zinc-850 hover:bg-zinc-800 cursor-pointer'
+                                  : 'bg-zinc-950/60 text-zinc-650 border-zinc-950 cursor-not-allowed'
+                              }`}
+                              title={isUnlocked ? `Set match code size to ${size}` : `Upgrade Orb Set to ${size} at the Forge`}
+                            >
+                              {size}
+                              {!isUnlocked && <span className="text-[8px] ml-0.5">🔒</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[8px] text-zinc-500 mt-1 uppercase tracking-tight text-center">
+                        {maxUnlockedOrbLength === 4 
+                          ? 'Unlock sizes 5 & 6 under Forge!' 
+                          : `Adjust setup values for deep strategizing`}
+                      </p>
+                    </div>
+
                     <button
                       onClick={() => startNewBattle(currentBossIndex)}
-                      className="mt-5 px-5 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-black text-[10px] font-black uppercase rounded-lg tracking-wider transition flex items-center gap-1.5 shadow"
+                      className="mt-4 px-5 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-black text-[10px] font-black uppercase rounded-lg tracking-wider transition flex items-center gap-1.5 shadow"
                     >
                       <CirclePlay className="w-3.5 h-3.5 fill-current shrink-0" /> Challenge Active Target
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+                  <div className="w-full">
                     
-                    {/* Left Column: Active Duel dashboard */}
-                    <div className="lg:col-span-8 flex flex-col gap-4">
-                      
-                      {/* Active Duel Atmosphere Cosmic Flash */}
-                      {battle && battle.status === 'ACTIVE' && (
-                        <div 
-                          className="w-full py-1.5 bg-zinc-950/90 border border-zinc-850 rounded-xl flex items-center justify-center select-none"
-                          style={{ borderColor: `${battle.currentBoss.hexTheme}30` }}
-                        >
-                          <div className="flex items-center gap-1.5 py-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ backgroundColor: battle.currentBoss.hexTheme }} />
-                            <span className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-zinc-300">
-                              Active Duel Atmosphere: {battle.currentBoss.imageTheme.toUpperCase()} ENGAGED
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Active Boss Card */}
+                    {/* MOBILE DEDICATED VISUAL FLOW (Optimized layout, bottom sheet trigger, and floating backpack) */}
+                    <div className="flex md:hidden flex-col gap-4">
+                      {/* Atmospheric Showcase Boss Card */}
                       <BossCard
                         boss={battle.currentBoss}
                         currentHp={battle.turnsRemaining}
@@ -1024,24 +1088,22 @@ export default function App() {
                         }}
                       />
 
-                      {/* Transmutation board circles */}
+                      {/* Code Matrix Slot Board */}
                       <div className="bg-zinc-950 rounded-2xl border border-zinc-900 p-4 shadow-xl relative overflow-hidden">
-                        
                         <div className="absolute right-0 top-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
-
-                        {/* Title */}
+                        
                         <div className="flex justify-between items-center mb-3 pb-1.5 border-b border-zinc-900">
                           <div>
                             <span className="text-[8px] uppercase tracking-wider text-amber-500 font-bold font-mono">CODE MATRIX</span>
-                            <h4 className="text-[10px] uppercase font-extrabold text-zinc-350 mt-0.5">Submit Formula Combo</h4>
+                            <h4 className="text-[10px] uppercase font-extrabold text-zinc-350 mt-0.5">TAP TO RESET ELEMENT</h4>
                           </div>
                           <span className="text-[9px] text-zinc-500 font-mono uppercase">
-                            {battle.status === 'ACTIVE' ? 'DUEL ACTIVE' : 'COMPLETE'}
+                            {battle.status === 'ACTIVE' ? 'COMBAT' : 'FINISHED'}
                           </span>
                         </div>
 
                         {/* Slots */}
-                        <div className="flex flex-wrap items-center justify-center gap-2.5 py-4">
+                        <div className="flex flex-wrap items-center justify-center gap-2 py-3">
                           {battle.currentGuess.map((slot, sIdx) => {
                             const matchingOrb = slot ? INITIAL_ORBS.find(o => o.id === slot) : null;
                             
@@ -1065,49 +1127,51 @@ export default function App() {
                           })}
                         </div>
 
-                        {/* Palette selections */}
+                        {/* Palette elements */}
                         {battle.status === 'ACTIVE' ? (
-                          <div className="space-y-3 pt-1">
+                          <div className="space-y-3 pt-2">
                             <div className="text-center">
-                              <span className="text-[8.5px] text-zinc-500 uppercase tracking-widest font-mono">Select Element to fill:</span>
+                              <span className="text-[8.5px] text-zinc-500 uppercase tracking-widest font-mono">Tap color to fill slots:</span>
                             </div>
-                            <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-lg mx-auto bg-stone-900/20 p-2.5 border border-zinc-900/80 rounded-xl">
-                              {battle.currentBoss.allowedColors.map((colorId) => {
-                                const orb = INITIAL_ORBS.find(o => o.id === colorId);
-                                if (!orb) return null;
-                                
-                                return (
-                                  <button
-                                    key={colorId}
-                                    onClick={() => handlePaletteClick(colorId)}
-                                    className="px-2 py-1 bg-zinc-905 border border-zinc-800 hover:border-zinc-700 text-[10px] font-bold rounded-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer text-zinc-300"
-                                  >
-                                    <MindOrb orbId={orb.id} className="w-3 h-3" />
-                                    <span className="capitalize text-[10px]">{colorId}</span>
-                                  </button>
-                                );
-                              })}
+                            <div className="grid grid-cols-3 gap-1.5 bg-zinc-900/10 p-2 border border-zinc-900/60 rounded-xl">
+                              {battle.currentBoss.allowedColors
+                                .filter(colorId => getUnlockedOrbs(campaignProgress).includes(colorId))
+                                .map((colorId) => {
+                                  const orb = INITIAL_ORBS.find(o => o.id === colorId);
+                                  if (!orb) return null;
+                                  
+                                  return (
+                                    <button
+                                      key={colorId}
+                                      onClick={() => handlePaletteClick(colorId)}
+                                      className="py-2 bg-zinc-950 border border-zinc-900 hover:border-zinc-850 text-[10px] font-bold rounded-lg flex flex-col items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer text-zinc-300"
+                                    >
+                                      <MindOrb orbId={orb.id} className="w-4 h-4" />
+                                      <span className="capitalize text-[8.5px] font-mono">{colorId}</span>
+                                    </button>
+                                  );
+                                })}
                             </div>
 
-                            {/* Controls bar */}
-                            <div className="flex gap-2 justify-end pt-1">
+                            {/* Mobile Controls buttons */}
+                            <div className="flex gap-2 justify-between pt-2">
                               <button
-                                onClick={() => setBattle({ ...battle, currentGuess: Array(battle.currentBoss.orbsMax).fill(null) })}
-                                className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-[9.5px] font-bold uppercase rounded-md hover:bg-zinc-850 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                                onClick={() => setBattle({ ...battle, currentGuess: Array(battle.secretCode.length).fill(null) })}
+                                className="flex-1 py-2.5 bg-zinc-900 border border-zinc-850 text-[9.5px] font-bold uppercase rounded-xl hover:bg-zinc-850 hover:text-white transition flex items-center justify-center gap-1 cursor-pointer"
                               >
-                                <RotateCcw className="w-3 h-3" /> Clear
+                                <RotateCcw className="w-3 h-3 text-red-400" /> Clear
                               </button>
                               <button
                                 onClick={fillGuessSlotsRandomly}
-                                className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-[9.5px] font-bold uppercase rounded-md hover:bg-zinc-850 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                                className="flex-1 py-2.5 bg-zinc-900 border border-zinc-850 text-[9.5px] font-bold uppercase rounded-xl hover:bg-zinc-850 hover:text-white transition flex items-center justify-center gap-1 cursor-pointer"
                               >
-                                <Dices className="w-3 h-3" /> Auto
+                                <Dices className="w-3 h-3 text-cyan-400" /> Auto
                               </button>
                               <button
                                 onClick={submitGuessRow}
-                                className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-black text-[10px] font-mono font-black uppercase rounded-md tracking-wider transition active:scale-95 cursor-pointer shadow shadow-amber-500/10 flex items-center gap-1"
+                                className="flex-1.5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-black text-[10px] font-mono font-black uppercase rounded-xl tracking-wider transition active:scale-95 cursor-pointer shadow shadow-amber-500/10 flex items-center justify-center gap-1"
                               >
-                                Submit guess
+                                Submit combination
                               </button>
                             </div>
                           </div>
@@ -1121,7 +1185,7 @@ export default function App() {
                             </p>
                             <button
                               onClick={() => startNewBattle(currentBossIndex)}
-                              className="mt-3 px-4 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-[9.5px] font-bold uppercase rounded transition cursor-pointer"
+                              className="mt-3 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-[9.5px] font-bold uppercase rounded-xl transition cursor-pointer"
                             >
                               <RotateCw className="w-3 h-3 inline mr-1" /> Restart Node Duel
                             </button>
@@ -1129,100 +1193,308 @@ export default function App() {
                         )}
                       </div>
 
-                      {/* Historical Game board rows */}
+                      {/* Mobile floating backpack action card */}
+                      {battle.status === 'ACTIVE' && (
+                        <button
+                          onClick={() => setIsStashModalOpen(true)}
+                          className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-purple-950/80 to-zinc-950/95 border-2 border-purple-500/35 hover:border-purple-400 rounded-2xl shadow-[0_0_15px_rgba(168,85,247,0.15)] active:scale-[0.98] transition cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-purple-900/60 border border-purple-500/40 flex items-center justify-center animate-pulse">
+                              <Backpack className="w-4 h-4 text-purple-300" />
+                            </div>
+                            <div className="text-left">
+                              <span className="text-[9px] font-mono text-purple-400 font-extrabold uppercase tracking-wide block leading-none">
+                                Alchemist Spellbook
+                              </span>
+                              <span className="text-[11px] font-black uppercase tracking-wide text-zinc-100 mt-0.5 block">
+                                Open Grid Stash
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <div className="px-2 py-0.5 bg-purple-900/50 border border-purple-500/30 text-purple-300 text-[9px] font-mono font-bold rounded-lg">
+                              {Object.values(abilitiesCharges).reduce<number>((sum, val) => sum + (val as number), 0)} Charges
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-purple-450" />
+                          </div>
+                        </button>
+                      )}
+
+                      {/* Historical Logs List */}
                       <HistoricalGuesses
                         guesses={battle.guesses}
-                        codeLength={battle.currentBoss.orbsMax}
+                        codeLength={battle.secretCode.length}
                         availableOrbs={INITIAL_ORBS}
                         shroudedTurnsActive={false}
                       />
                     </div>
 
-                     {/* Right Column: Spells and logs */}
-                     <div className="lg:col-span-4 flex flex-col gap-4">
-                       
-                       {/* Compact Alchemist grid stash with selected details */}
-                       <div id="combat-backpack-panel" className="bg-zinc-950 border border-zinc-900 rounded-2xl p-4 shadow-xl text-white relative">
-                         <div className="border-b border-zinc-900 pb-2 mb-3">
-                           <span className="text-[8px] font-mono tracking-widest text-amber-500 font-bold uppercase block leading-none">
-                             Alchemist Grid Stash
-                           </span>
-                           <h4 className="text-xs font-extrabold uppercase mt-1">Select & Casting Pad</h4>
-                         </div>
- 
-                         {/* Interactive hotbar grid (12 slots, 4x3) */}
-                         <div className="grid grid-cols-4 gap-1.5 py-1">
-                           {INITIAL_ORBS.map((orb) => {
-                             const chargesOwned = abilitiesCharges[orb.id] || 0;
-                             const isSelected = selectedSpellId === orb.id;
-                             
-                             return (
-                               <button
-                                 key={orb.id}
-                                 onClick={() => setSelectedSpellId(orb.id)}
-                                 className={`p-1.5 rounded-xl border flex flex-col items-center justify-between gap-1 transition-all relative cursor-pointer group select-none ${
-                                   isSelected
-                                     ? 'bg-amber-500/15 border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.2)] scale-[1.04]'
-                                     : chargesOwned > 0
-                                     ? 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-750'
-                                     : 'bg-zinc-950/20 border-zinc-900/40 opacity-40 hover:opacity-60'
-                                 }`}
-                               >
-                                 {/* Count badge */}
-                                 <span className={`absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full text-[7.5px] font-black font-mono border ${
-                                   chargesOwned > 0
-                                     ? 'bg-zinc-800 border-zinc-750 text-amber-400'
-                                     : 'bg-zinc-950 border-zinc-900 text-zinc-650'
-                                 }`}>
-                                   {chargesOwned}
-                                 </span>
-                                 
-                                 <div className="py-2.5">
-                                   {renderOrbIconInBattle(orb.id)}
-                                 </div>
-                                 <span className="text-[7.5px] font-mono leading-none font-bold uppercase tracking-wider text-zinc-400 truncate w-full text-center">
-                                   {orb.id}
-                                 </span>
-                               </button>
-                             );
-                           })}
-                         </div>
- 
-                         {/* Details & Deploy trigger */}
-                         {(() => {
-                           const selectedOrb = INITIAL_ORBS.find(o => o.id === selectedSpellId);
-                           if (!selectedOrb) return null;
-                           const chargesOwned = abilitiesCharges[selectedOrb.id] || 0;
-                           return (
-                             <div className="mt-3 bg-zinc-900/45 border border-zinc-900 rounded-xl p-2.5 flex flex-col gap-2 transition-all">
-                               <div className="flex justify-between items-center gap-1.5">
-                                 <div className="flex items-center gap-1.5 truncate">
-                                   <span className="text-[7.5px] font-extrabold font-mono text-amber-500 uppercase shrink-0">SELECTED:</span>
-                                   <span className="text-[9.5px] font-black uppercase text-zinc-100 truncate">{selectedOrb.id}</span>
-                                 </div>
-                                 <span className="text-[8px] font-mono text-zinc-400 shrink-0">Charges: {chargesOwned}</span>
-                               </div>
-                               <p className="text-[9px] text-zinc-405 leading-normal font-sans">
-                                 {selectedOrb.abilityDescription}
-                               </p>
-                               <button
-                                 onClick={() => deploySpellAbility(selectedOrb.id)}
-                                 disabled={chargesOwned <= 0 || battle.status !== 'ACTIVE'}
-                                 className={`w-full py-2 rounded-xl text-[9px] font-black uppercase font-mono tracking-wider transition-all cursor-pointer ${
-                                   chargesOwned > 0 && battle.status === 'ACTIVE'
-                                     ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-black hover:brightness-110 active:scale-[0.98]'
-                                     : 'bg-zinc-900 text-zinc-600 border border-zinc-900 cursor-not-allowed'
-                                 }`}
-                               >
-                                 {chargesOwned > 0 ? 'Cast Spell Ability' : 'No Charges'}
-                               </button>
-                             </div>
-                           );
-                         })()}
- 
-                       </div>
- 
-                     </div>
+                    {/* DESKTOP MAJESTIC VISUAL FLOW (Expansive widescreen arena layout with full focus on duel atmospheres) */}
+                    <div className="hidden md:flex flex-col gap-5 w-full">
+                      {/* Full-width High-Showcase Boss Duel Backdrop */}
+                      <BossCard
+                        boss={battle.currentBoss}
+                        currentHp={battle.turnsRemaining}
+                        currentShield={0}
+                        maxHp={battle.maxTurns}
+                        status={battle.status}
+                        turnsRemaining={battle.turnsRemaining}
+                        maxTurns={battle.maxTurns}
+                        dialogue={
+                          battle.status === 'VICTORY'
+                            ? battle.currentBoss.dialogueDefeat
+                            : battle.status === 'DEFEAT'
+                            ? battle.currentBoss.dialogueVictory
+                            : battle.currentBoss.dialogueIntro
+                        }
+                        activeEffects={{
+                          igniteTurns: 0,
+                          igniteDamage: 0,
+                          bossBlindTurns: 0,
+                          fragileTurns: 0,
+                          fragileMultiplier: 1
+                        }}
+                      />
+
+                      {/* Code Matrix grid container - centering the code puzzle layout */}
+                      <div className="bg-zinc-950 rounded-2xl border border-zinc-900 p-5 shadow-xl relative overflow-hidden">
+                        <div className="absolute right-0 top-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+                        
+                        {/* Title bar */}
+                        <div className="flex justify-between items-center mb-4 pb-2 border-b border-zinc-900">
+                          <div>
+                            <span className="text-[9px] uppercase tracking-widest text-amber-500 font-bold font-mono">CODE MATRIX DECRYPTOR</span>
+                            <h4 className="text-xs uppercase font-extrabold text-zinc-350 mt-0.5">Submit Formula Combination</h4>
+                          </div>
+                          <span className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase">
+                            {battle.status === 'ACTIVE' ? 'DUEL ENGAGED' : 'SYSTEM OFFLINE'}
+                          </span>
+                        </div>
+
+                        {/* Slots */}
+                        <div className="flex flex-wrap items-center justify-center gap-3 py-6">
+                          {battle.currentGuess.map((slot, sIdx) => {
+                            const matchingOrb = slot ? INITIAL_ORBS.find(o => o.id === slot) : null;
+                            
+                            return (
+                              <button
+                                key={sIdx}
+                                onClick={() => slot && removeOrbFromCircle(sIdx)}
+                                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer relative ${
+                                  matchingOrb
+                                    ? 'border-white/50 hover:brightness-110 active:scale-95'
+                                    : 'border-zinc-800 border-dashed bg-zinc-900/40 hover:border-zinc-500 hover:bg-zinc-900/80'
+                                }`}
+                              >
+                                {matchingOrb ? (
+                                  <MindOrb orbId={matchingOrb.id} className="w-9.5 h-9.5" />
+                                ) : (
+                                  <span className="text-zinc-650 text-xs font-mono font-bold">0{sIdx + 1}</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Palette Selections */}
+                        {battle.status === 'ACTIVE' ? (
+                          <div className="space-y-4 pt-1 max-w-2xl mx-auto">
+                            <div className="text-center">
+                              <span className="text-[9px] text-zinc-550 uppercase tracking-widest font-mono">Select elements to load into circles:</span>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-2 bg-stone-900/15 p-3 border border-zinc-900/85 rounded-xl">
+                              {battle.currentBoss.allowedColors
+                                .filter(colorId => getUnlockedOrbs(campaignProgress).includes(colorId))
+                                .map((colorId) => {
+                                  const orb = INITIAL_ORBS.find(o => o.id === colorId);
+                                  if (!orb) return null;
+                                  
+                                  return (
+                                    <button
+                                      key={colorId}
+                                      onClick={() => handlePaletteClick(colorId)}
+                                      className="px-3 py-1.5 bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-xs font-bold rounded-lg flex items-center gap-2 transition active:scale-95 cursor-pointer text-zinc-300 shadow-sm"
+                                    >
+                                      <MindOrb orbId={orb.id} className="w-3.5 h-3.5" />
+                                      <span className="capitalize text-[10px]">{colorId}</span>
+                                    </button>
+                                  );
+                                })}
+                            </div>
+
+                            {/* Controls bar + Spell Stash Launcher button */}
+                            <div className="flex gap-2.5 justify-between items-center pt-2">
+                              {/* Left: Spellbook launcher */}
+                              <button
+                                onClick={() => setIsStashModalOpen(true)}
+                                className="px-4 py-2 bg-gradient-to-r from-purple-950 to-zinc-950 border border-purple-500/40 text-[10px] text-purple-300 font-extrabold uppercase rounded-lg hover:border-purple-400 hover:text-white transition flex items-center gap-2 cursor-pointer shadow-md select-none"
+                              >
+                                <Backpack className="w-4 h-4 text-purple-400 animate-pulse" />
+                                <span>Alchemist Spell Stash</span>
+                                <span className="bg-purple-900/60 text-purple-300 text-[9px] px-1.5 py-0.2 rounded-full font-mono border border-purple-500/30">
+                                  {Object.values(abilitiesCharges).reduce<number>((sum, val) => sum + (val as number), 0)} Charges
+                                </span>
+                              </button>
+
+                              {/* Right: Submit & clear controls */}
+                              <div className="flex gap-2.5">
+                                <button
+                                  onClick={() => setBattle({ ...battle, currentGuess: Array(battle.secretCode.length).fill(null) })}
+                                  className="px-3.5 py-2 bg-zinc-900 border border-zinc-800 text-[10px] font-bold uppercase rounded-lg hover:bg-zinc-850 hover:text-white transition flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5 animate-spin-slow" /> Clear
+                                </button>
+                                <button
+                                  onClick={fillGuessSlotsRandomly}
+                                  className="px-3.5 py-2 bg-zinc-900 border border-zinc-800 text-[10px] font-bold uppercase rounded-lg hover:bg-zinc-850 hover:text-white transition flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  <Dices className="w-3.5 h-3.5" /> Auto Fill
+                                </button>
+                                <button
+                                  onClick={submitGuessRow}
+                                  className="px-5 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-black text-[10.5px] font-mono font-black uppercase rounded-lg tracking-wider transition active:scale-95 cursor-pointer shadow shadow-amber-500/10 flex items-center gap-1.5"
+                                >
+                                  Submit combination
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-5 bg-black/40 border border-zinc-900 rounded-xl">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-350">
+                              Duel complete
+                            </h4>
+                            <p className="text-[10px] text-zinc-500 mt-1">
+                              {battle.status === 'VICTORY' ? '🏆 Passcode is successfully cracked!' : '💀 Decryption node connection broken.'}
+                            </p>
+                            <button
+                              onClick={() => startNewBattle(currentBossIndex)}
+                              className="mt-4 px-5 py-2 bg-zinc-900 border border-zinc-850 hover:bg-zinc-800 text-[10px] font-bold uppercase rounded-lg transition cursor-pointer"
+                            >
+                              <RotateCw className="w-3.5 h-3.5 inline mr-1" /> Restart Node Duel
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Widescreen feedback history */}
+                      <HistoricalGuesses
+                        guesses={battle.guesses}
+                        codeLength={battle.secretCode.length}
+                        availableOrbs={INITIAL_ORBS}
+                        shroudedTurnsActive={false}
+                      />
+                    </div>
+
+                    {/* CONTEXTUAL INTUITIVE POPUP MODAL FOR ALCHEMIST GRID STASH */}
+                    {isStashModalOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div 
+                          className="absolute inset-0 bg-black/85 backdrop-blur-md cursor-pointer" 
+                          onClick={() => setIsStashModalOpen(false)}
+                        />
+                        
+                        <div 
+                          className="bg-zinc-950 border-2 border-purple-500/40 rounded-2xl p-5 max-w-md w-full relative z-10 shadow-[0_0_50px_rgba(168,85,247,0.35)] text-white animate-[zoomIn_0.15s_ease-out]"
+                          style={{ borderColor: battle ? `${battle.currentBoss.hexTheme}50` : '' }}
+                        >
+                          <div className="flex justify-between items-center border-b border-zinc-900 pb-2.5 mb-4">
+                            <div>
+                              <span className="text-[8px] font-mono tracking-widest text-purple-400 font-bold uppercase block leading-none">
+                                Alchemist Grid Stash
+                              </span>
+                              <h4 className="text-xs font-extrabold uppercase mt-1 flex items-center gap-1.5 text-zinc-100">
+                                <span>Select & Casting Pad</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping inline-block" />
+                              </h4>
+                            </div>
+                            <button 
+                              onClick={() => setIsStashModalOpen(false)}
+                              className="w-8 h-8 flex items-center justify-center bg-zinc-900 hover:bg-zinc-800 rounded-lg text-xs font-mono font-bold transition cursor-pointer text-zinc-400 hover:text-white"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          {/* 4x3 Spell Matrix grid */}
+                          <div className="grid grid-cols-4 gap-2 py-1">
+                            {INITIAL_ORBS.map((orb) => {
+                              const chargesOwned = abilitiesCharges[orb.id] || 0;
+                              const isSelected = selectedSpellId === orb.id;
+                              
+                              return (
+                                <button
+                                  key={orb.id}
+                                  onClick={() => setSelectedSpellId(orb.id)}
+                                  className={`p-2 rounded-xl border flex flex-col items-center justify-between gap-1 transition-all relative cursor-pointer group select-none ${
+                                    isSelected
+                                      ? 'bg-purple-900/20 border-purple-405 shadow-[0_0_12px_rgba(168,85,247,0.3)] scale-[1.04]'
+                                      : chargesOwned > 0
+                                      ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-750'
+                                      : 'bg-zinc-950/25 border-zinc-950 opacity-40 hover:opacity-60'
+                                  }`}
+                                >
+                                  {/* Count badge */}
+                                  <span className={`absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full text-[8px] font-black font-mono border ${
+                                    chargesOwned > 0
+                                      ? 'bg-purple-900 border-purple-505 text-purple-305'
+                                      : 'bg-zinc-950 border-zinc-900 text-zinc-650'
+                                  }`}>
+                                    {chargesOwned}
+                                  </span>
+                                  
+                                  <div className="py-2.5">
+                                    {renderOrbIconInBattle(orb.id)}
+                                  </div>
+                                  <span className="text-[7.5px] font-mono leading-none font-bold uppercase tracking-wider text-zinc-450 truncate w-full text-center">
+                                    {orb.id}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Ability Details & Casting Button */}
+                          {(() => {
+                            const selectedOrb = INITIAL_ORBS.find(o => o.id === selectedSpellId);
+                            if (!selectedOrb) return null;
+                            const chargesOwned = abilitiesCharges[selectedOrb.id] || 0;
+                            return (
+                              <div className="mt-4 bg-zinc-900/35 border border-zinc-900 rounded-xl p-3 flex flex-col gap-2 transition-all">
+                                <div className="flex justify-between items-center gap-1.5">
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <span className="text-[7.5px] font-extrabold font-mono text-purple-400 uppercase shrink-0">SELECTED:</span>
+                                    <span className="text-[10px] font-black uppercase text-zinc-100 truncate">{selectedOrb.id}</span>
+                                  </div>
+                                  <span className="text-[8px] font-mono text-zinc-400 shrink-0">Charges: {chargesOwned}</span>
+                                </div>
+                                <p className="text-[9.5px] text-zinc-350 leading-normal font-sans">
+                                  {selectedOrb.abilityDescription}
+                                </p>
+                                <button
+                                  onClick={() => {
+                                    deploySpellAbility(selectedOrb.id);
+                                    if (chargesOwned <= 1) {
+                                      // Can keep open or let player cast further
+                                    }
+                                  }}
+                                  disabled={chargesOwned <= 0 || !battle || battle.status !== 'ACTIVE'}
+                                  className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase font-mono tracking-wider transition-all cursor-pointer ${
+                                    chargesOwned > 0 && battle && battle.status === 'ACTIVE'
+                                      ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:brightness-110 active:scale-[0.98]'
+                                      : 'bg-zinc-900 text-zinc-600 border border-zinc-900 cursor-not-allowed'
+                                  }`}
+                                >
+                                  {chargesOwned > 0 ? 'Cast Spell Ability' : 'No Charges'}
+                                </button>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    )}
 
                   </div>
                 )}
@@ -1236,6 +1508,8 @@ export default function App() {
                 abilitiesCharges={abilitiesCharges}
                 onBuyAbility={buyAbilityCharge}
                 campaignProgress={campaignProgress}
+                maxUnlockedOrbLength={maxUnlockedOrbLength}
+                onBuyOrbSetUpgrade={buyOrbSetUpgrade}
               />
             )}
 

@@ -9,6 +9,8 @@ interface OrbUpgradesProps {
   abilitiesCharges: { [orbId: string]: number };
   onBuyAbility: (orbId: string, cost: number) => void;
   campaignProgress: number; // to show locking based on game progress
+  maxUnlockedOrbLength: number;
+  onBuyOrbSetUpgrade: (nextSize: number, cost: { [orbId: string]: number }) => void;
 }
 
 export default function OrbUpgrades({
@@ -16,8 +18,20 @@ export default function OrbUpgrades({
   playerFragments,
   abilitiesCharges,
   onBuyAbility,
-  campaignProgress
+  campaignProgress,
+  maxUnlockedOrbLength,
+  onBuyOrbSetUpgrade
 }: OrbUpgradesProps) {
+
+  // Costs and details for the Orb Set size upgrade
+  const upgradeCost5 = { orange: 150, blue: 150, green: 150, red: 100, yellow: 100 };
+  const upgradeCost6 = { silver: 150, purple: 150, gold: 100, white: 100, black: 50 };
+
+  const canAfford5 = Object.entries(upgradeCost5).every(([orb, cost]) => (playerFragments[orb] || 0) >= cost);
+  const canAfford6 = Object.entries(upgradeCost6).every(([orb, cost]) => (playerFragments[orb] || 0) >= cost);
+
+  const isLevel5Locked = campaignProgress < 5;
+  const isLevel6Locked = campaignProgress < 7;
 
   // Lock helper based on campaignProgress (measured by beaten bosses count):
   const getOrbLockStatus = (id: string): { isLocked: boolean; criteria: string } => {
@@ -145,6 +159,157 @@ export default function OrbUpgrades({
             })}
           </div>
         </div>
+      </div>
+
+      {/* Altar Core Upgrade: Increase Max Guess Orb Capacity (4 -> 6) */}
+      <div id="altar-upgrade-frame" className="rounded-2xl bg-gradient-to-br from-zinc-950 to-zinc-900 border border-zinc-900 p-6 relative overflow-hidden text-white shadow-xl">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-zinc-900 mb-6Shared">
+          <div>
+            <span className="text-[10px] font-mono tracking-widest text-purple-400 font-bold uppercase flex items-center gap-1.5 leading-none">
+              <Sparkles className="w-3.5 h-3.5" />
+              GRAND TRANSMUTATION ALTAR CORE
+            </span>
+            <h2 className="text-lg font-extrabold tracking-tight mt-1">Orb Guess Set Capacity</h2>
+            <p className="text-xs text-zinc-400 mt-1">
+              Upgrade your core Transmutation Circle to forge larger decryption guess chains (up to 6 slots). Larger codes allow deeper strategy and larger boards.
+            </p>
+          </div>
+          
+          <div className="bg-zinc-900 px-3 py-1.5 border border-zinc-850 rounded-full text-[10px] font-mono text-zinc-300 flex items-center gap-1.5 self-start md:self-auto select-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+            MAX GUESS SLOTS: <span className="font-extrabold text-purple-400">{maxUnlockedOrbLength} / 6</span>
+          </div>
+        </div>
+
+        {maxUnlockedOrbLength === 4 && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            <div className="md:col-span-8 space-y-2">
+              <h3 className="font-bold text-sm text-zinc-200">Upgrade to 5-Orb Assembly Mat</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Expands your maximum guess sequence size from 4 to 5. Once purchased, you'll gain a size-slider before every duel to adjust your target passphrase formula.
+              </p>
+              {isLevel5Locked ? (
+                <div className="flex items-center gap-1.5 text-xs text-amber-500 bg-amber-950/20 p-2 border border-amber-900/30 rounded-lg max-w-sm mt-3">
+                  <Lock className="w-3.5 h-3.5 shrink-0" />
+                  <span>Locked: Requires defeating **Boss 5 (Natty D)**.</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-950/20 p-2 border border-emerald-900/30 rounded-lg max-w-sm mt-3">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Available: Purchase to unlock 5-orb battles!</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="md:col-span-4 bg-black/40 border border-zinc-900 p-4 rounded-xl flex flex-col justify-between items-stretch gap-4">
+              <div className="space-y-2">
+                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 block">Required Fragments:</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(upgradeCost5).map(([orbId, cost]) => {
+                    const owned = playerFragments[orbId] || 0;
+                    const hasEnough = owned >= cost;
+                    return (
+                      <div key={orbId} className="flex items-center justify-between text-[11px] font-mono bg-zinc-900/40 px-2 py-1 rounded border border-zinc-900">
+                        <span className="capitalize text-zinc-400">{orbId}:</span>
+                        <span className={hasEnough ? 'text-emerald-400 font-bold' : 'text-red-400'}>
+                          {owned}/{cost}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <button
+                disabled={isLevel5Locked || !canAfford5}
+                onClick={() => onBuyOrbSetUpgrade(5, upgradeCost5)}
+                className={`w-full py-2 rounded-lg text-xs font-black uppercase tracking-wider transition active:scale-95 flex items-center justify-center gap-1.5 ${
+                  !isLevel5Locked && canAfford5
+                    ? 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-md shadow-purple-600/10'
+                    : 'bg-zinc-900 text-zinc-500 border border-zinc-850 cursor-not-allowed'
+                }`}
+              >
+                <Plus className="w-4 h-4" /> Scribe 5-Orb Upgrade
+              </button>
+            </div>
+          </div>
+        )}
+
+        {maxUnlockedOrbLength === 5 && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            <div className="md:col-span-8 space-y-2">
+              <h3 className="font-bold text-sm text-zinc-200">Upgrade to 6-Orb Assembly Mat</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Expands your maximum guess sequence size from 5 to 6. This unlocks the true maximum layout, allowing deeper logic decryption matches and maximum drop weights!
+              </p>
+              {isLevel6Locked ? (
+                <div className="flex items-center gap-1.5 text-xs text-amber-500 bg-amber-950/20 p-2 border border-amber-900/30 rounded-lg max-w-sm mt-3">
+                  <Lock className="w-3.5 h-3.5 shrink-0" />
+                  <span>Locked: Requires defeating **Boss 7 (Sir Louie)**.</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-950/20 p-2 border border-emerald-900/30 rounded-lg max-w-sm mt-3">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Available: Spend premium shards to reach the maximum level!</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="md:col-span-4 bg-black/40 border border-zinc-900 p-4 rounded-xl flex flex-col justify-between items-stretch gap-4">
+              <div className="space-y-2">
+                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 block">Required Fragments:</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(upgradeCost6).map(([orbId, cost]) => {
+                    const owned = playerFragments[orbId] || 0;
+                    const hasEnough = owned >= cost;
+                    return (
+                      <div key={orbId} className="flex items-center justify-between text-[11px] font-mono bg-zinc-900/40 px-2 py-1 rounded border border-zinc-900">
+                        <span className="capitalize text-zinc-400">{orbId}:</span>
+                        <span className={hasEnough ? 'text-emerald-400 font-bold' : 'text-red-400'}>
+                          {owned}/{cost}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <button
+                disabled={isLevel6Locked || !canAfford6}
+                onClick={() => onBuyOrbSetUpgrade(6, upgradeCost6)}
+                className={`w-full py-2 rounded-lg text-xs font-black uppercase tracking-wider transition active:scale-95 flex items-center justify-center gap-1.5 ${
+                  !isLevel6Locked && canAfford6
+                    ? 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-md shadow-purple-600/10'
+                    : 'bg-zinc-900 text-zinc-500 border border-zinc-850 cursor-not-allowed'
+                }`}
+              >
+                <Plus className="w-4 h-4" /> Scribe 6-Orb Upgrade
+              </button>
+            </div>
+          </div>
+        )}
+
+        {maxUnlockedOrbLength >= 6 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-purple-950/10 border border-purple-900/30 p-4 rounded-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-950 border border-purple-900 text-purple-400 flex items-center justify-center font-bold font-mono animate-pulse">
+                MAX
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-purple-200">Ultimate Altar Mat Achieved!</h3>
+                <p className="text-[11px] text-zinc-400 leading-relaxed mt-0.5">
+                  Your transmutation circle is fully prepared! You can now freely select code matrices between 4, 5, and 6 slots for any challenge.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1 text-[10px] font-mono font-black text-purple-400 uppercase bg-purple-950/30 border border-purple-900/40 px-3 py-1.5 rounded-lg select-none">
+              <CheckCircle2 className="w-4 h-4 text-purple-450 fill-current" /> ALL SLOTS UNLOCKED
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Crucible Store: Spend fragments to forge/charge abilities */}

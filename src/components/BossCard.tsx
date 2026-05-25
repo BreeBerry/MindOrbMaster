@@ -137,15 +137,15 @@ export default function BossCard({
           src={bgSrc}
           alt={`${boss.name} Battle Arena Background`}
           onError={handleBgError}
-          className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none transition-transform duration-10000 ease-out scale-100 group-hover:scale-105 filter brightness-50"
+          className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none transition-transform duration-10000 ease-out scale-100 group-hover:scale-105 filter brightness-75 contrast-110"
           referrerPolicy="no-referrer"
         />
       ) : null}
 
       {/* Atmospheric Vignette Gradients */}
       <div 
-        className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent pointer-events-none" 
-        style={{ background: `linear-gradient(to top, #09090b 20%, rgba(9,9,11,0.7) 60%, rgba(9,9,11,0.2) 100%)` }}
+        className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent pointer-events-none" 
+        style={{ background: `linear-gradient(to top, #09090b 45%, rgba(9,9,11,0.45) 75%, rgba(9,9,11,0.1) 100%)` }}
       />
       <div 
         className="absolute -right-12 -top-12 w-48 h-48 rounded-full blur-3xl pointer-events-none animate-pulse" 

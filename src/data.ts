@@ -332,3 +332,16 @@ export const BOSS_CAMPAIGN: Boss[] = [
     hexTheme: '#f43f5e'
   }
 ];
+
+export const getUnlockedOrbs = (progress: number): string[] => {
+  const unlocked = ['red', 'blue', 'yellow', 'green', 'orange'];
+  if (progress >= 3) unlocked.push('purple');
+  if (progress >= 4) unlocked.push('white');
+  if (progress >= 5) unlocked.push('black');
+  if (progress >= 6) unlocked.push('teal');
+  if (progress >= 7) unlocked.push('silver');
+  if (progress >= 8) unlocked.push('gold');
+  if (progress >= 9) unlocked.push('pink');
+  return unlocked;
+};
+
